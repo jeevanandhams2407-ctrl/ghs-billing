@@ -1,0 +1,2617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>GHS Billing</title>
+<meta name="description" content="Girivalam Home Stay Billing System">
+<meta name="theme-color" content="#0A5C44">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GHS Billing">
+<link rel="manifest" href="data:application/json,{
+  %22name%22:%22GHS Billing System%22,
+  %22short_name%22:%22GHS Billing%22,
+  %22start_url%22:%22.%22,
+  %22display%22:%22standalone%22,
+  %22background_color%22:%22%230A5C44%22,
+  %22theme_color%22:%22%230A5C44%22,
+  %22icons%22:[{%22src%22:%22data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230A5C44'/%3E%3Ctext y='.9em' font-size='75' x='10'%3E%F0%9F%8F%A8%3C/text%3E%3C/svg%3E%22,%22sizes%22:%22192x192%22,%22type%22:%22image/svg+xml%22}]
+}">
+<!-- Inline SVG favicon -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230A5C44'/><text y='.9em' font-size='75' x='10'>🏨</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --gd:#0A5C44;--gm:#1D9E75;--gl:#E1F5EE;--gp:#F0FAF6;
+  --gold:#C8973A;--text:#1a1a1a;--muted:#6b7280;
+  --border:rgba(0,0,0,0.10);--bg:#F7F5F0;--card:#fff;
+  --r:14px;--rs:8px;--drawer:72px;
+  /* Branch themes */
+  --b1-primary:#0A5C44;--b1-mid:#1D9E75;--b1-light:#E1F5EE;
+  --b2-primary:#1a3a6b;--b2-mid:#2563eb;--b2-light:#dbeafe;
+  --admin-primary:#7c2d12;--admin-mid:#C8973A;--admin-light:#fef3c7;
+}
+/* Branch 1 theme (default - green) */
+body.branch-1 { --gd:var(--b1-primary);--gm:var(--b1-mid);--gl:var(--b1-light);--gp:#F0FAF6; }
+/* Branch 2 theme (blue) */
+body.branch-2 { --gd:var(--b2-primary);--gm:var(--b2-mid);--gl:var(--b2-light);--gp:#eff6ff; }
+/* Admin theme (gold/brown) */
+body.admin { --gd:var(--admin-primary);--gm:var(--admin-mid);--gl:var(--admin-light);--gp:#fffbeb; }
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;}
+.app-layout{display:flex;min-height:100vh;}
+
+/* ── DRAWER ── */
+.floating-dock{display:none;}
+.drawer{width:72px;background:var(--gd);display:flex;flex-direction:column;align-items:center;padding:12px 0 16px;position:fixed;top:0;left:0;bottom:0;z-index:100;box-shadow:2px 0 12px rgba(0,0,0,0.15);}
+.drawer-logo{width:44px;height:44px;background:rgba(255,255,255,0.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:4px;flex-shrink:0;}
+.drawer-brand{font-size:8px;color:rgba(255,255,255,0.5);text-align:center;line-height:1.3;padding:0 6px;margin-bottom:14px;}
+.drawer-divider{width:32px;height:0.5px;background:rgba(255,255,255,0.15);margin:0 0 8px;}
+.drawer-nav{display:flex;flex-direction:column;gap:4px;flex:1;width:100%;align-items:center;padding:0 8px;}
+.d-btn{width:56px;height:56px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;transition:background 0.15s,transform 0.1s;position:relative;border:none;background:transparent;}
+.d-btn:hover{background:rgba(255,255,255,0.08);}
+.d-btn.active{background:rgba(255,255,255,0.18);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,0.25);}
+.d-btn:active{transform:scale(0.94);}
+.d-icon{font-size:20px;line-height:1;}
+.d-label{font-size:8px;color:rgba(255,255,255,0.7);font-weight:500;text-align:center;line-height:1.2;}
+.d-btn.active .d-label{color:#fff;}
+.d-badge{position:absolute;top:6px;right:6px;background:var(--gold);color:#fff;font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.d-badge.red{background:#ef4444;}
+.d-badge.hidden{display:none;}
+.drawer-bottom{margin-top:auto;display:flex;flex-direction:column;align-items:center;}
+.drawer-clock{font-size:8px;color:rgba(255,255,255,0.6);text-align:center;line-height:1.4;background:rgba(255,255,255,0.08);border-radius:8px;padding:5px 4px;width:56px;}
+.drawer-clock .dc-time{font-size:11px;color:#fff;font-weight:600;display:block;}
+
+/* ── MAIN ── */
+.main{margin-left:72px;flex:1;min-height:100vh;}
+.page{display:none;}
+.page.active{display:block;}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--gd);height:52px;display:flex;align-items:center;padding:0 14px;position:sticky;top:0;z-index:50;}
+.topbar-title{font-family:'Playfair Display',serif;font-size:15px;color:#fff;flex:1;}
+.topbar-sub{font-size:10px;color:rgba(255,255,255,0.55);display:block;margin-top:1px;}
+.topbar-pill{font-size:10px;color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.12);padding:4px 9px;border-radius:20px;font-weight:500;}
+
+/* ── LOGIN PAGE ── */
+.login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#0A5C44 0%,#1a7a5a 100%);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.login-box{background:#fff;border-radius:20px;padding:32px 24px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+.login-logo{text-align:center;font-size:40px;margin-bottom:8px;}
+.login-title{font-family:"Playfair Display",serif;font-size:20px;font-weight:700;color:#0A5C44;text-align:center;margin-bottom:4px;}
+.login-sub{font-size:11px;color:#6b7280;text-align:center;margin-bottom:24px;}
+.login-field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+.login-field label{font-size:11px;font-weight:500;color:#6b7280;}
+.login-field input{border:1px solid rgba(0,0,0,0.12);border-radius:8px;padding:12px;font-size:15px;font-family:"DM Sans",sans-serif;outline:none;transition:border-color 0.15s;}
+.login-field input:focus{border-color:#1D9E75;}
+.login-btn{background:#0A5C44;color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:600;font-family:"DM Sans",sans-serif;cursor:pointer;width:100%;margin-top:8px;transition:background 0.15s;}
+.login-btn:active{background:#063d2d;}
+.login-error{background:#fef2f2;color:#dc2626;font-size:12px;padding:8px 12px;border-radius:8px;margin-top:8px;text-align:center;display:none;}
+.login-error.show{display:block;}
+.logout-btn{background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.8);border:0.5px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px 8px;font-size:10px;font-family:"DM Sans",sans-serif;cursor:pointer;}
+
+/* ── OVERVIEW PAGE ── */
+.overview-wrap{max-width:480px;margin:0 auto;padding:12px 12px 30px;}
+.overview-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.ov-card{background:var(--card);border-radius:var(--r);border:0.5px solid var(--border);padding:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.ov-label{font-size:10px;color:var(--muted);font-weight:500;margin-bottom:3px;}
+.ov-val{font-size:20px;font-weight:600;color:var(--gd);font-family:"Playfair Display",serif;}
+.ov-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+.chart-card{background:var(--card);border-radius:var(--r);border:0.5px solid var(--border);padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.chart-title{font-size:11px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--gd);margin-bottom:12px;}
+.chart-toggle{display:flex;gap:6px;margin-bottom:10px;}
+.chart-tog-btn{flex:1;padding:6px;border-radius:6px;font-size:11px;font-weight:600;font-family:"DM Sans",sans-serif;border:1px solid var(--border);background:#fafaf8;color:var(--muted);cursor:pointer;transition:all 0.15s;}
+.chart-tog-btn.active{background:var(--gd);color:#fff;border-color:var(--gd);}
+.chart-legend{display:flex;gap:12px;margin-bottom:8px;flex-wrap:wrap;}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+
+/* ══ RESPONSIVE ══ */
+@media(max-width:360px){.drawer{width:60px;}.d-btn{width:48px;height:48px;}.d-label{display:none;}.drawer-clock{width:48px;}}
+
+/* ── SIDEBAR (shown on tablet+desktop) ── */
+.sidebar{
+  width:220px;background:var(--gd);
+  display:none;flex-direction:column;
+  align-items:stretch;padding:0;
+  position:fixed;top:0;left:0;bottom:0;
+  z-index:100;box-shadow:2px 0 12px rgba(0,0,0,0.15);
+}
+.s-header{padding:16px 16px 12px;border-bottom:0.5px solid rgba(255,255,255,0.12);}
+.s-brand-name{font-family:"Playfair Display",serif;font-size:15px;color:#fff;font-weight:700;line-height:1.2;}
+.s-brand-sub{font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px;}
+.s-clock{font-size:11px;color:rgba(255,255,255,0.7);margin-top:6px;font-weight:500;}
+.s-nav{flex:1;padding:8px 8px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;}
+.s-btn{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:10px;
+  border:none;background:transparent;
+  cursor:pointer;width:100%;text-align:left;
+  transition:background 0.15s;position:relative;
+}
+.s-btn:hover{background:rgba(255,255,255,0.08);}
+.s-btn.active{background:rgba(255,255,255,0.15);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.2);}
+.s-icon{font-size:18px;flex-shrink:0;width:28px;text-align:center;}
+.s-label{font-size:13px;color:rgba(255,255,255,0.8);font-weight:500;}
+.s-btn.active .s-label{color:#fff;}
+.s-badge{margin-left:auto;background:var(--gold);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;}
+.s-badge.red{background:#ef4444;}
+.s-badge.hidden{display:none;}
+.s-divider{height:0.5px;background:rgba(255,255,255,0.12);margin:6px 12px;}
+.s-footer{padding:12px 16px;border-top:0.5px solid rgba(255,255,255,0.12);}
+.s-logout{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:none;background:rgba(239,68,68,0.15);cursor:pointer;width:100%;}
+.s-logout span{font-size:14px;}
+.s-logout p{font-size:12px;color:#fca5a5;font-weight:500;margin:0;}
+.s-user{font-size:10px;color:rgba(255,255,255,0.5);margin-bottom:8px;}
+
+/* ── BRANCH SELECTOR ── */
+.branch-bar{background:#063d2d;padding:8px 14px;display:flex;align-items:center;gap:8px;border-bottom:0.5px solid rgba(255,255,255,0.1);}
+.branch-label{font-size:10px;color:rgba(255,255,255,0.55);font-weight:500;flex-shrink:0;}
+.branch-btn{flex:1;padding:7px 6px;border-radius:var(--rs);font-size:11px;font-weight:600;font-family:"DM Sans",sans-serif;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.6);background:transparent;cursor:pointer;text-align:center;transition:all 0.15s;}
+.branch-btn.active{background:#fff;color:var(--gd);border-color:#fff;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#9ca3af;flex-shrink:0;}
+.sync-dot.online{background:#22c55e;box-shadow:0 0 6px #22c55e;}
+.sync-status{font-size:9px;color:rgba(255,255,255,0.45);}
+
+/* ── MONITOR PAGE ── */
+.monitor-wrap{max-width:480px;margin:0 auto;padding:12px 12px 30px;}
+.monitor-live-badge{display:flex;align-items:center;gap:6px;background:var(--card);border-radius:var(--rs);padding:8px 12px;margin-bottom:12px;border:0.5px solid var(--border);}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.live-text{font-size:11px;color:var(--muted);font-weight:500;}
+.live-time{font-size:10px;color:var(--muted);margin-left:auto;}
+.monitor-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.monitor-bill-row{border-bottom:0.5px solid var(--border);padding:9px 12px;}
+.monitor-bill-row:last-child{border-bottom:none;}
+.monitor-empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;}
+
+/* ── SUB TABS (New / Old Bill) ── */
+.sub-tabs{display:flex;background:var(--gd);padding:0 14px 12px;gap:8px;}
+.sub-tab{flex:1;padding:9px;border-radius:var(--rs);font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;border:1.5px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);background:transparent;cursor:pointer;text-align:center;transition:all 0.15s;}
+.sub-tab.active{background:#fff;color:var(--gd);border-color:#fff;}
+.sub-tab:active{transform:scale(0.97);}
+
+/* ── BILL FORMS ── */
+.bill-form{display:none;}
+.bill-form.active{display:block;}
+
+/* ── STAY TYPE TOGGLE ── */
+.type-toggle{display:flex;gap:8px;margin-bottom:2px;}
+.type-btn{flex:1;border:1.5px solid var(--border);border-radius:var(--rs);padding:11px 6px;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:center;background:#fafaf8;color:var(--muted);transition:all 0.15s;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.type-btn span{font-size:20px;}
+.type-btn.active{border-color:var(--gm);background:var(--gl);color:var(--gd);}
+.type-btn:active{transform:scale(0.97);}
+
+/* ── OLD BILL NOTE ── */
+.old-note{background:#fffbeb;border:0.5px solid #fcd34d;border-radius:var(--rs);padding:8px 12px;font-size:11px;color:#92400e;margin-bottom:10px;line-height:1.4;}
+
+/* ── FORM ELEMENTS ── */
+.form-wrap{max-width:480px;margin:0 auto;padding:10px 12px 100px;}
+.card{background:var(--card);border-radius:var(--r);border:0.5px solid var(--border);margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.card-head{background:var(--gp);border-bottom:0.5px solid rgba(0,100,60,0.10);padding:8px 12px;display:flex;align-items:center;gap:8px;}
+.ch-icon{width:22px;height:22px;background:var(--gm);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+.ch-label{font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--gd);}
+.card-body{padding:11px 12px;display:flex;flex-direction:column;gap:9px;}
+.field{display:flex;flex-direction:column;gap:3px;}
+.field label{font-size:10px;font-weight:500;color:var(--muted);}
+.field input,.field select{border:1px solid var(--border);border-radius:var(--rs);padding:11px 10px;font-size:15px;font-family:'DM Sans',sans-serif;background:#fafaf8;color:var(--text);outline:none;width:100%;-webkit-appearance:none;transition:border-color 0.15s;}
+.field input:focus,.field select:focus{border-color:var(--gm);background:#fff;}
+.field input::placeholder{color:#bbb;}
+.field input[readonly]{background:var(--gp);color:var(--gd);font-weight:600;cursor:default;}
+.field input.editable-dt{background:#fff3cd;color:#7c4a00;font-weight:500;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+.subtotal-strip{background:var(--gl);border-radius:var(--rs);padding:9px 12px;display:flex;justify-content:space-between;align-items:center;}
+.subtotal-strip .sl{font-size:11px;font-weight:500;color:var(--gd);}
+.subtotal-strip .sv{font-size:16px;font-weight:600;color:var(--gd);font-family:'Playfair Display',serif;}
+.pay-options{display:flex;gap:8px;}
+.pay-btn{flex:1;border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 6px;font-size:11px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:center;background:#fafaf8;color:var(--muted);transition:all 0.15s;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.pay-btn span{font-size:17px;}
+.pay-btn.active{border-color:var(--gm);background:var(--gl);color:var(--gd);}
+.grand-bar{background:var(--gd);border-radius:var(--r);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;box-shadow:0 4px 14px rgba(10,92,68,0.18);}
+.grand-bar .gl{font-size:12px;color:rgba(255,255,255,0.75);font-weight:500;}
+.grand-bar .gv{font-family:'Playfair Display',serif;font-size:26px;color:#fff;font-weight:700;}
+.commission-card{background:var(--card);border-radius:var(--r);border:1.5px dashed #f59e0b;margin-bottom:10px;overflow:hidden;}
+.commission-head{background:#fffbeb;border-bottom:0.5px solid #fcd34d;padding:8px 12px;display:flex;align-items:center;gap:8px;}
+.commission-icon{width:22px;height:22px;background:#f59e0b;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+.commission-label{font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#92400e;}
+.commission-note{font-size:9px;color:#b45309;margin-left:auto;font-style:italic;}
+.commission-body{padding:11px 12px;display:flex;flex-direction:column;gap:8px;}
+.net-strip{background:#fef3c7;border-radius:var(--rs);padding:9px 12px;display:flex;justify-content:space-between;align-items:center;border:0.5px solid #fcd34d;}
+.net-strip .nl{font-size:11px;font-weight:500;color:#92400e;}
+.net-strip .nv{font-size:15px;font-weight:600;color:#92400e;font-family:'Playfair Display',serif;}
+
+/* RECEIPT BADGE */
+.receipt-badge{background:var(--card);margin:0 0 10px;border-radius:var(--rs);border:0.5px solid var(--border);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;}
+.receipt-badge .rl{font-size:10px;color:var(--muted);font-weight:500;}
+.receipt-badge .rv{font-size:13px;font-weight:600;color:var(--gd);}
+
+/* EMAIL */
+.email-body{padding:11px 12px;display:flex;flex-direction:column;gap:8px;}
+.email-row{display:flex;gap:8px;}
+.email-row .field{flex:1;}
+.btn-email{background:#2563eb;color:white;border:none;border-radius:var(--rs);padding:11px 10px;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;white-space:nowrap;align-self:flex-end;display:flex;align-items:center;gap:4px;}
+.btn-dl{background:#166534;color:white;border:none;border-radius:var(--rs);padding:10px 14px;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:6px;}
+.email-hint{font-size:10px;color:var(--muted);line-height:1.4;padding:7px 9px;background:#fffbeb;border-radius:6px;border:0.5px solid #fcd34d;}
+
+/* ACTION BAR */
+.action-bar{position:fixed;bottom:0;left:72px;right:0;background:#fff;border-top:0.5px solid var(--border);padding:9px 12px;display:flex;gap:8px;z-index:99;box-shadow:0 -4px 16px rgba(0,0,0,0.07);}
+.btn-clear{background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:var(--rs);padding:12px 12px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;}
+.btn-save{background:var(--gold);color:#fff;border:none;border-radius:var(--rs);padding:12px 12px;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:4px;}
+.btn-print{background:var(--gd);color:#fff;border:none;border-radius:var(--rs);padding:12px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;flex:1;display:flex;align-items:center;justify-content:center;gap:6px;}
+.btn-clear:active,.btn-save:active,.btn-print:active{transform:scale(0.97);}
+
+/* ── BILLS PAGE ── */
+.bills-wrap{max-width:480px;margin:0 auto;padding:12px 12px 30px;}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.sum-card{background:var(--card);border-radius:var(--r);border:0.5px solid var(--border);padding:12px 12px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.sum-card .sc-label{font-size:10px;color:var(--muted);font-weight:500;margin-bottom:3px;}
+.sum-card .sc-val{font-size:20px;font-weight:600;color:var(--gd);font-family:'Playfair Display',serif;}
+.sum-card .sc-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+.bills-table-wrap{background:var(--card);border-radius:var(--r);border:0.5px solid var(--border);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.bills-table-head{background:var(--gp);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;}
+.bills-table-head span{font-size:10px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--gd);}
+.bills-table-head button{background:var(--gd);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:10px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;}
+.bill-row{border-bottom:0.5px solid var(--border);padding:9px 12px;}
+.bill-row:last-child{border-bottom:none;}
+.bill-row-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
+.bill-row-name{font-size:13px;font-weight:600;}
+.bill-row-amt{font-size:14px;font-weight:600;color:var(--gd);}
+.bill-row-bot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;}
+.bill-row-no{font-size:10px;color:var(--muted);}
+.tag{font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;}
+.tag-new{background:#dcfce7;color:#166534;}
+.tag-old{background:#fef3c7;color:#92400e;}
+.tag-room{background:#dbeafe;color:#1d4ed8;}
+.tag-hall{background:#f3e8ff;color:#7c3aed;}
+.pay-cash{background:#dcfce7;color:#166534;}
+.pay-gpay{background:#dbeafe;color:#1d4ed8;}
+.pay-other{background:#fef3c7;color:#92400e;}
+.pay-na{background:#f3f4f6;color:#6b7280;}
+.no-bills{text-align:center;padding:36px 20px;color:var(--muted);font-size:13px;}
+
+/* ── ALERTS PAGE ── */
+.alerts-wrap{max-width:480px;margin:0 auto;padding:12px 12px 30px;}
+.alert-info-box{background:var(--card);border-radius:var(--r);border:0.5px solid var(--border);padding:12px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.alert-info-title{font-size:12px;font-weight:600;color:var(--gd);margin-bottom:3px;}
+.alert-info-desc{font-size:11px;color:var(--muted);line-height:1.5;}
+.section-title{font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px 2px;}
+.active-timers{display:flex;flex-direction:column;gap:8px;}
+.timer-card{background:var(--card);border-radius:var(--r);border:0.5px solid var(--border);padding:11px 12px;box-shadow:0 1px 3px rgba(0,0,0,0.04);display:flex;align-items:center;gap:10px;}
+.timer-card.warning{border-color:#f59e0b;background:#fffbeb;}
+.timer-card.danger{border-color:#ef4444;background:#fef2f2;}
+.timer-card.expired{border-color:#9ca3af;background:#f9fafb;}
+.tc-icon{font-size:22px;flex-shrink:0;}
+.tc-info{flex:1;}
+.tc-name{font-size:13px;font-weight:600;}
+.tc-receipt{font-size:10px;color:var(--muted);}
+.tc-time{font-size:11px;color:var(--muted);margin-top:2px;}
+.tc-countdown{text-align:right;flex-shrink:0;}
+.tc-hrs{font-size:19px;font-weight:700;font-family:'Playfair Display',serif;}
+.tc-hrs.green{color:var(--gm);}
+.tc-hrs.amber{color:#f59e0b;}
+.tc-hrs.red{color:#ef4444;}
+.tc-hrs.gray{color:#9ca3af;}
+.tc-label{font-size:9px;color:var(--muted);}
+.no-timers{text-align:center;padding:36px 20px;color:var(--muted);font-size:13px;}
+
+/* ── POPUP ── */
+.popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity 0.3s;}
+.popup-overlay.show{opacity:1;pointer-events:all;}
+.popup-box{background:#fff;border-radius:20px;padding:24px 20px;max-width:300px;width:100%;text-align:center;transform:scale(0.9);transition:transform 0.3s;}
+.popup-overlay.show .popup-box{transform:scale(1);}
+.popup-icon{font-size:40px;margin-bottom:8px;}
+.popup-title{font-family:'Playfair Display',serif;font-size:19px;color:#dc2626;font-weight:700;margin-bottom:5px;}
+.popup-guest{font-size:15px;font-weight:600;color:var(--text);margin-bottom:3px;}
+.popup-receipt{font-size:11px;color:var(--muted);margin-bottom:12px;}
+.popup-msg{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:14px;}
+.popup-btn{background:var(--gd);color:#fff;border:none;border-radius:var(--rs);padding:11px 24px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;width:100%;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:white;padding:8px 16px;border-radius:20px;font-size:12px;z-index:500;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;}
+
+/* ── ACCESSORIES ── */
+.acc-wrap{max-width:480px;margin:0 auto;padding:12px 12px 30px;}
+.acc-hero-note{font-size:11px;color:var(--muted);text-align:center;margin-bottom:12px;}
+.acc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.acc-item{background:var(--card);border-radius:var(--r);border:0.5px solid var(--border);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);display:flex;flex-direction:column;align-items:center;}
+.acc-img{width:100%;height:70px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:38px;}
+.acc-details{flex:1;padding:8px 8px 10px;width:100%;}
+.acc-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:1px;text-align:center;}
+.acc-price{font-size:10px;color:var(--muted);margin-bottom:6px;text-align:center;}
+.acc-counter{display:flex;align-items:center;justify-content:center;gap:7px;}
+.acc-btn{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg);font-size:16px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);transition:all 0.15s;font-family:'DM Sans',sans-serif;}
+.acc-btn.plus{background:var(--gd);color:#fff;border-color:var(--gd);}
+.acc-btn:active{transform:scale(0.92);}
+.acc-count{font-size:17px;font-weight:700;color:var(--gd);min-width:22px;text-align:center;font-family:'Playfair Display',serif;}
+.acc-subtotal{font-size:10px;color:var(--muted);text-align:center;margin-top:4px;}
+.acc-subtotal strong{display:block;font-size:12px;color:var(--gd);font-weight:600;}
+.acc-total-bar{background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:var(--r);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;box-shadow:0 4px 14px rgba(245,158,11,0.25);}
+.acc-total-bar .atl{font-size:12px;color:rgba(255,255,255,0.85);font-weight:500;}
+.acc-total-bar .atv{font-family:'Playfair Display',serif;font-size:26px;color:#fff;font-weight:700;}
+.acc-save-bar{display:flex;gap:8px;margin-bottom:10px;}
+.btn-acc-save{background:var(--gd);color:#fff;border:none;border-radius:var(--rs);padding:13px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;flex:1;display:flex;align-items:center;justify-content:center;gap:6px;}
+.btn-acc-clear{background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:var(--rs);padding:13px 14px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;}
+.btn-acc-save:active,.btn-acc-clear:active{transform:scale(0.97);}
+.acc-history{background:var(--card);border-radius:var(--r);border:0.5px solid var(--border);overflow:hidden;}
+.acc-history-head{background:var(--gp);padding:8px 12px;border-bottom:0.5px solid rgba(0,100,60,0.10);}
+.acc-history-head span{font-size:10px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--gd);}
+.acc-log-row{border-bottom:0.5px solid var(--border);padding:9px 12px;display:flex;justify-content:space-between;align-items:center;}
+.acc-log-row:last-child{border-bottom:none;}
+.acc-log-name{font-size:12px;font-weight:500;color:var(--text);}
+.acc-log-meta{font-size:10px;color:var(--muted);}
+.acc-log-amt{font-size:13px;font-weight:600;color:var(--gd);}
+.no-acc-log{text-align:center;padding:24px;font-size:12px;color:var(--muted);}
+
+/* ── HISTORY PAGE ── */
+.history-wrap{max-width:480px;margin:0 auto;padding:12px 12px 30px;}
+.history-search-card{background:var(--card);border-radius:var(--r);border:0.5px solid var(--border);padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.history-load-btn{background:var(--gd);color:#fff;border:none;border-radius:var(--rs);padding:11px 16px;font-size:13px;font-weight:600;font-family:"DM Sans",sans-serif;cursor:pointer;white-space:nowrap;align-self:flex-end;}
+.history-load-btn:active{transform:scale(0.97);}
+.history-quick-btn{background:var(--bg);color:var(--muted);border:0.5px solid var(--border);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:500;font-family:"DM Sans",sans-serif;cursor:pointer;}
+.history-quick-btn:active{background:var(--gl);color:var(--gd);}
+.history-branch-label{font-size:11px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--gd);margin-bottom:6px;padding-left:2px;}
+.history-bill-detail{background:var(--gp);border-top:0.5px solid var(--border);padding:8px 12px;font-size:11px;color:var(--muted);display:none;}
+.history-bill-detail.open{display:block;}
+.history-detail-row{display:flex;justify-content:space-between;padding:2px 0;}
+
+/* ── STORAGE MANAGEMENT ── */
+.storage-card{background:var(--card);border-radius:var(--r);border:0.5px solid var(--border);padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.storage-bar-wrap{background:#f3f4f6;border-radius:20px;height:10px;margin:8px 0;overflow:hidden;}
+.storage-bar{height:10px;border-radius:20px;background:var(--gm);transition:width 0.5s;}
+.storage-bar.warn{background:#f59e0b;}
+.storage-bar.danger{background:#ef4444;}
+.storage-stat{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;}
+.storage-stat strong{color:var(--text);}
+.month-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--border);}
+.month-row:last-child{border-bottom:none;}
+.month-name{font-size:13px;font-weight:500;color:var(--text);}
+.month-count{font-size:11px;color:var(--muted);}
+.month-amt{font-size:13px;font-weight:600;color:var(--gd);}
+.month-actions{display:flex;gap:6px;}
+.btn-month-export{background:var(--gd);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;font-family:"DM Sans",sans-serif;cursor:pointer;}
+.btn-month-delete{background:#ef4444;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;font-family:"DM Sans",sans-serif;cursor:pointer;}
+.storage-section-title{font-size:11px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);margin:14px 0 8px 2px;}
+
+/* ── ADMIN PAGE ── */
+.admin-wrap{max-width:520px;margin:0 auto;padding:12px 12px 30px;}
+.admin-branch-tabs{display:flex;gap:8px;margin-bottom:12px;}
+.admin-tab{flex:1;padding:10px;border-radius:var(--rs);font-size:12px;font-weight:600;font-family:"DM Sans",sans-serif;border:1.5px solid var(--border);background:#fafaf8;color:var(--muted);cursor:pointer;text-align:center;transition:all 0.15s;}
+.admin-tab.active{background:var(--gd);color:#fff;border-color:var(--gd);}
+.admin-date-row{display:flex;gap:8px;margin-bottom:12px;align-items:center;}
+.admin-date-row input{border:1px solid var(--border);border-radius:var(--rs);padding:9px 10px;font-size:14px;font-family:"DM Sans",sans-serif;background:#fafaf8;color:var(--text);outline:none;flex:1;}
+.admin-date-row input:focus{border-color:var(--gm);}
+.admin-load-btn{background:var(--gd);color:#fff;border:none;border-radius:var(--rs);padding:10px 14px;font-size:13px;font-weight:600;font-family:"DM Sans",sans-serif;cursor:pointer;white-space:nowrap;}
+.admin-summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.admin-bill-card{background:var(--card);border-radius:var(--r);border:0.5px solid var(--border);margin-bottom:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.admin-bill-head{background:var(--gp);padding:8px 12px;display:flex;justify-content:space-between;align-items:center;}
+.admin-bill-name{font-size:13px;font-weight:600;color:var(--gd);}
+.admin-bill-receipt{font-size:10px;color:var(--muted);}
+.admin-bill-body{padding:10px 12px;}
+.admin-field-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.admin-field-row label{font-size:10px;color:var(--muted);font-weight:500;width:90px;flex-shrink:0;}
+.admin-field-row input,.admin-field-row select{border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;font-family:"DM Sans",sans-serif;background:#fafaf8;color:var(--text);outline:none;flex:1;}
+.admin-field-row input:focus{border-color:var(--gm);background:#fff;}
+.admin-bill-actions{display:flex;gap:8px;margin-top:10px;}
+.btn-admin-save{background:var(--gm);color:#fff;border:none;border-radius:var(--rs);padding:9px 14px;font-size:12px;font-weight:600;font-family:"DM Sans",sans-serif;cursor:pointer;flex:1;}
+.btn-admin-del{background:#ef4444;color:#fff;border:none;border-radius:var(--rs);padding:9px 14px;font-size:12px;font-weight:600;font-family:"DM Sans",sans-serif;cursor:pointer;}
+.btn-admin-save:active{transform:scale(0.97);}
+.btn-admin-del:active{transform:scale(0.97);}
+.admin-empty{text-align:center;padding:30px;color:var(--muted);font-size:13px;}
+
+/* ── PRINT (A5) ── */
+@media print{
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  body>*:not(#bill-preview){display:none!important;}
+  #bill-preview{display:block!important;}
+  @page{margin:5mm;size:A5 portrait;}
+}
+#bill-preview{display:none;}
+.bill-sheet{width:138mm;margin:0 auto;color:#111;background:white;font-family:'DM Sans',sans-serif;}
+.bill-header{text-align:center;padding:6pt 0 5pt;border-bottom:2pt solid #0A5C44;margin-bottom:8pt;}
+.bill-lodge-name{font-family:'Playfair Display',serif;font-size:16pt;font-weight:700;color:#0A5C44;}
+.bill-address,.bill-phone{font-size:8pt;color:#555;margin-top:1pt;}
+.bill-title-bar{background:#0A5C44;color:white;text-align:center;padding:4pt;font-size:9pt;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8pt;font-weight:600;}
+.bill-table{width:100%;border-collapse:collapse;font-size:10.5pt;}
+.bill-table td{padding:5pt 8pt;border:0.5pt solid #ddd;}
+.bill-table td:first-child{font-weight:500;color:#555;width:44%;background:#f8f8f8;}
+.bill-total-row td{background:#0A5C44!important;color:white!important;font-size:13pt;font-weight:700!important;}
+.bill-footer{text-align:center;font-size:8pt;color:#888;margin-top:10pt;padding-top:6pt;border-top:0.5pt solid #ddd;}
+.bill-sig{display:flex;justify-content:space-between;margin-top:20pt;font-size:8.5pt;color:#555;padding:0 4pt;}
+
+@media(max-width:360px){:root{--drawer:60px;}.d-btn{width:48px;height:48px;}.d-label{display:none;}.drawer-clock{width:48px;}}
+</style>
+</head>
+<body>
+<!-- ══ LOGIN OVERLAY ══ -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">🏨</div>
+    <div class="login-title">GHS Billing System</div>
+
+    <!-- STEP 1: Select Branch -->
+    <div id="login-step1">
+      <div style="font-size:12px;color:#6b7280;text-align:center;margin-bottom:16px;">Select your branch to continue</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button onclick="goToPassword('Girivalam Home Stay','🏠')" style="background:#0A5C44;color:#fff;border:none;border-radius:12px;padding:14px 16px;font-size:14px;font-weight:600;font-family:DM Sans,sans-serif;cursor:pointer;display:flex;align-items:center;gap:10px;transition:opacity 0.15s;">
+          <span style="font-size:20px;">🏠</span>
+          <div style="text-align:left;"><div>Girivalam Home Stay</div><div style="font-size:10px;font-weight:400;opacity:0.8;">Branch 1 · Tiruvannamalai</div></div>
+        </button>
+        <button onclick="goToPassword('Anandha Wedding Hall','🏪')" style="background:#1a7a5a;color:#fff;border:none;border-radius:12px;padding:14px 16px;font-size:14px;font-weight:600;font-family:DM Sans,sans-serif;cursor:pointer;display:flex;align-items:center;gap:10px;transition:opacity 0.15s;">
+          <span style="font-size:20px;">🏪</span>
+          <div style="text-align:left;"><div>Anandha Wedding Hall</div><div style="font-size:10px;font-weight:400;opacity:0.8;">Branch 2</div></div>
+        </button>
+        <button onclick="goToPassword('Jeevanandham S','🔑')" style="background:#C8973A;color:#fff;border:none;border-radius:12px;padding:14px 16px;font-size:14px;font-weight:600;font-family:DM Sans,sans-serif;cursor:pointer;display:flex;align-items:center;gap:10px;transition:opacity 0.15s;">
+          <span style="font-size:20px;">🔑</span>
+          <div style="text-align:left;"><div>Admin</div><div style="font-size:10px;font-weight:400;opacity:0.8;">Full access · All branches</div></div>
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Enter Password -->
+    <div id="login-step2" style="display:none;">
+      <button onclick="goBackToStep1()" style="background:none;border:none;color:#6b7280;font-size:13px;cursor:pointer;padding:0;margin-bottom:16px;display:flex;align-items:center;gap:4px;font-family:DM Sans,sans-serif;">
+        ← Back
+      </button>
+      <div id="login-selected-badge" style="background:#f0faf6;border:1px solid #1D9E75;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+        <span id="login-selected-icon" style="font-size:22px;"></span>
+        <div>
+          <div id="login-selected-name" style="font-size:14px;font-weight:600;color:#0A5C44;"></div>
+          <div style="font-size:11px;color:#6b7280;">Enter your password below</div>
+        </div>
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <input id="login-pass" type="password" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <input id="login-user" type="hidden">
+      <button class="login-btn" onclick="doLogin()">Login →</button>
+    </div>
+    <div class="login-error" id="login-error">❌ Wrong username or password</div>
+  </div>
+</div>
+
+<div class="app-layout" id="main-app" style="display:none;">
+
+<!-- ══ SIDE DRAWER ══ -->
+<div class="drawer">
+  <div class="drawer-logo">🏨</div>
+  <div class="drawer-brand" id="drawer-brand">GHS<br>Billing</div>
+  <div class="drawer-divider"></div>
+  <div class="drawer-nav">
+    <button class="d-btn active" id="dbtn-billing" onclick="showPage('billing')">
+      <div class="d-icon">🧾</div>
+      <div class="d-label">Billing</div>
+    </button>
+    <button class="d-btn" id="dbtn-bills" onclick="showPage('bills')">
+      <div class="d-icon">📊</div>
+      <div class="d-label">Bills</div>
+      <div class="d-badge" id="bills-badge">0</div>
+    </button>
+    <button class="d-btn" id="dbtn-alerts" onclick="showPage('alerts')">
+      <div class="d-icon">⏰</div>
+      <div class="d-label">Alerts</div>
+      <div class="d-badge red hidden" id="alert-badge">0</div>
+    </button>
+    <button class="d-btn" id="dbtn-accessories" onclick="showPage('accessories')">
+      <div class="d-icon">🛍️</div>
+      <div class="d-label">Items</div>
+    </button>
+    <button class="d-btn" id="dbtn-monitor" onclick="showPage('monitor')">
+      <div class="d-icon">📡</div>
+      <div class="d-label">Monitor</div>
+      <div class="d-badge red hidden" id="monitor-badge">!</div>
+    </button>
+    <button class="d-btn" id="dbtn-overview" onclick="showPage('overview')">
+      <div class="d-icon">📈</div>
+      <div class="d-label">Overview</div>
+    </button>
+    <button class="d-btn" id="dbtn-history" onclick="showPage('history')" style="display:none;">
+      <div class="d-icon">🗂️</div>
+      <div class="d-label">History</div>
+    </button>
+    <button class="d-btn" id="dbtn-admin" onclick="showPage('admin')" style="display:none;">
+      <div class="d-icon">🔑</div>
+      <div class="d-label">Admin</div>
+    </button>
+  </div>
+  <div class="drawer-bottom">
+    <div class="drawer-clock">
+      <span class="dc-time" id="dc-time">--:--</span>
+      <span id="dc-date">--/--</span>
+    </div>
+    <button class="logout-btn" onclick="doLogout()" style="margin-top:6px;">⏏ Out</button>
+  </div>
+</div>
+
+<!-- ══ MAIN ══ -->
+<div class="main">
+
+<!-- ══ PAGE 1: BILLING ══ -->
+<div class="page active" id="page-billing">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="branch-title">Girivalam Home Stay</div>
+      <span class="topbar-sub" id="branch-sub">No. 70, Sannathi Street, Tiruvannamalai</span>
+    </div>
+    <div class="topbar-pill">📞 9442293933</div>
+  </div>
+  <div class="branch-bar">
+    <div class="branch-label">Branch:</div>
+    <button class="branch-btn active" id="bbtn-1" onclick="switchBranch(1)">🏠 Girivalam Home Stay</button>
+    <button class="branch-btn" id="bbtn-2" onclick="switchBranch(2)">🏪 Anandha Wedding Hall</button>
+    <div class="sync-dot" id="sync-dot"></div>
+    <div class="sync-status" id="sync-status">Connecting...</div>
+  </div>
+
+  <!-- Sub Tabs -->
+  <div class="sub-tabs">
+    <button class="sub-tab active" id="tab-new" onclick="switchTab('new')">➕ New Bill</button>
+    <button class="sub-tab" id="tab-old" onclick="switchTab('old')">📝 Old Bill</button>
+  </div>
+
+  <!-- ── NEW BILL FORM ── -->
+  <div class="bill-form active" id="form-new">
+    <div class="form-wrap">
+      <div class="receipt-badge">
+        <span class="rl">Next Receipt No.</span>
+        <span class="rv" id="new-receipt-display">Loading...</span>
+      </div>
+
+      <!-- Guest Details -->
+      <div class="card">
+        <div class="card-head"><div class="ch-icon">👤</div><div class="ch-label">Guest Details</div></div>
+        <div class="card-body">
+          <!-- Stay Type -->
+          <div class="field"><label>Stay Type</label>
+            <div class="type-toggle">
+              <button class="type-btn active" id="new-type-hall" onclick="setType('new','hall')"><span>🛏️</span>Hall</button>
+              <button class="type-btn" id="new-type-room" onclick="setType('new','room')"><span>🏠</span>Room</button>
+            </div>
+          </div>
+          <div class="field"><label>Guest Name</label><input id="new-name" type="text" placeholder="Full name" autocomplete="off"></div>
+          <div class="row2">
+            <div class="field"><label>Mobile Number</label><input id="new-mobile" type="tel" placeholder="10-digit" inputmode="numeric"></div>
+            <div class="field"><label>Aadhaar Number</label><input id="new-aadhaar" type="text" placeholder="XXXX XXXX XXXX" inputmode="numeric"></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label>Check-in Date</label><input id="new-date" type="text" readonly></div>
+            <div class="field"><label>Check-in Time</label><input id="new-time" type="text" readonly></div>
+          </div>
+          <!-- Room Number (shown for Room type) -->
+          <div id="new-room-field" style="display:none;">
+            <div class="field"><label>Room Number</label><input id="new-room-num" type="text" placeholder="e.g. 101, A-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hall Section (Members + Locker) -->
+      <div id="new-hall-section">
+        <div class="card">
+          <div class="card-head"><div class="ch-icon">👥</div><div class="ch-label">Members</div></div>
+          <div class="card-body">
+            <div class="row2">
+              <div class="field"><label>No. of Members</label><input id="new-members" type="number" placeholder="e.g. 5" inputmode="numeric" min="1" oninput="calc('new')"></div>
+              <div class="field"><label>Rate per Person (₹)</label><input id="new-rate" type="number" placeholder="e.g. 150" value="100" inputmode="decimal" min="0" oninput="calc('new')"></div>
+            </div>
+            <div class="subtotal-strip"><span class="sl">Member Total</span><span class="sv" id="new-member-sub">₹ 0</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="ch-icon">🔒</div><div class="ch-label">Locker</div></div>
+          <div class="card-body">
+            <div class="row3">
+              <div class="field"><label>Locker Count</label><input id="new-locker-count" type="number" placeholder="1" inputmode="numeric" min="0" oninput="calc('new')"></div>
+              <div class="field"><label>Locker No.</label><input id="new-locker-num" type="text" placeholder="e.g. L-5"></div>
+              <div class="field"><label>Charge/Locker (₹)</label><input id="new-locker-rate" type="number" placeholder="50" value="100" inputmode="decimal" min="0" oninput="calc('new')"></div>
+            </div>
+            <div class="subtotal-strip"><span class="sl">Locker Total</span><span class="sv" id="new-locker-sub">₹ 0</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Room Section (Rate only) -->
+      <div id="new-room-section" style="display:none;">
+        <div class="card">
+          <div class="card-head"><div class="ch-icon">🏠</div><div class="ch-label">Room Charges</div></div>
+          <div class="card-body">
+            <div class="field"><label>Room Rate (₹)</label><input id="new-room-rate" type="number" placeholder="e.g. 800" value="1000" inputmode="decimal" min="0" oninput="calc('new')"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment -->
+      <div class="card">
+        <div class="card-head"><div class="ch-icon">💳</div><div class="ch-label">Payment Mode</div></div>
+        <div class="card-body">
+          <div class="pay-options">
+            <button class="pay-btn" id="new-pay-cash" onclick="selectPay('new','cash')"><span>💵</span>Cash</button>
+            <button class="pay-btn" id="new-pay-gpay" onclick="selectPay('new','gpay')"><span>📱</span>GPay</button>
+            <button class="pay-btn" id="new-pay-other" onclick="selectPay('new','other')"><span>🏦</span>Other</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grand-bar">
+        <div class="gl">Grand Total (Bill Amount)</div>
+        <div class="gv" id="new-grand-total">₹ 0</div>
+      </div>
+
+      <!-- Commission New -->
+      <div class="commission-card">
+        <div class="commission-head">
+          <div class="commission-icon">💰</div>
+          <div class="commission-label">Commission</div>
+          <div class="commission-note">Not shown on print</div>
+        </div>
+        <div class="commission-body">
+          <div class="field"><label>Commission Amount (₹)</label><input id="new-commission" type="number" placeholder="e.g. 100" inputmode="decimal" min="0" oninput="calcNet('new')"></div>
+          <div class="net-strip">
+            <span class="nl">Net Amount (after commission)</span>
+            <span class="nv" id="new-net-amount">₹ 0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Excel & Email -->
+      <div class="card">
+        <div class="card-head"><div class="ch-icon">📤</div><div class="ch-label">Save & Send Excel</div></div>
+        <div class="email-body">
+          <button class="btn-dl" onclick="saveToExcel()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download Today's Excel File
+          </button>
+          <div class="email-row">
+            <div class="field"><label>Send to Email</label><input id="f-email" type="email" placeholder="example@gmail.com" inputmode="email"></div>
+            <button class="btn-email" onclick="sendEmail()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Send
+            </button>
+          </div>
+          <div class="email-hint">⚙️ <strong>Setup:</strong> Fill EmailJS config in EMAILJS_CONFIG in the code. Free at emailjs.com</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── OLD BILL FORM ── -->
+  <div class="bill-form" id="form-old">
+    <div class="form-wrap">
+      <div class="old-note">📝 <strong>Old Bill Mode:</strong> Date and time are editable. Enter the original check-in details manually.</div>
+      <div class="receipt-badge">
+        <span class="rl">Next Receipt No.</span>
+        <span class="rv" id="old-receipt-display">Loading...</span>
+      </div>
+
+      <!-- Guest Details -->
+      <div class="card">
+        <div class="card-head"><div class="ch-icon">👤</div><div class="ch-label">Guest Details</div></div>
+        <div class="card-body">
+          <!-- Stay Type -->
+          <div class="field"><label>Stay Type</label>
+            <div class="type-toggle">
+              <button class="type-btn active" id="old-type-hall" onclick="setType('old','hall')"><span>🛏️</span>Hall</button>
+              <button class="type-btn" id="old-type-room" onclick="setType('old','room')"><span>🏠</span>Room</button>
+            </div>
+          </div>
+          <div class="field"><label>Guest Name</label><input id="old-name" type="text" placeholder="Full name" autocomplete="off"></div>
+          <div class="row2">
+            <div class="field"><label>Mobile Number</label><input id="old-mobile" type="tel" placeholder="10-digit" inputmode="numeric"></div>
+            <div class="field"><label>Aadhaar Number</label><input id="old-aadhaar" type="text" placeholder="XXXX XXXX XXXX" inputmode="numeric"></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label>Check-in Date</label><input id="old-date" type="date" class="editable-dt" style="background:#fff3cd;color:#7c4a00;font-weight:500;"></div>
+            <div class="field"><label>Check-in Time</label><input id="old-time" type="time" class="editable-dt" style="background:#fff3cd;color:#7c4a00;font-weight:500;"></div>
+          </div>
+          <!-- Room Number -->
+          <div id="old-room-field" style="display:none;">
+            <div class="field"><label>Room Number</label><input id="old-room-num" type="text" placeholder="e.g. 101, A-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hall Section -->
+      <div id="old-hall-section">
+        <div class="card">
+          <div class="card-head"><div class="ch-icon">👥</div><div class="ch-label">Members</div></div>
+          <div class="card-body">
+            <div class="row2">
+              <div class="field"><label>No. of Members</label><input id="old-members" type="number" placeholder="e.g. 5" inputmode="numeric" min="1" oninput="calc('old')"></div>
+              <div class="field"><label>Rate per Person (₹)</label><input id="old-rate" type="number" placeholder="e.g. 150" value="100" inputmode="decimal" min="0" oninput="calc('old')"></div>
+            </div>
+            <div class="subtotal-strip"><span class="sl">Member Total</span><span class="sv" id="old-member-sub">₹ 0</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="ch-icon">🔒</div><div class="ch-label">Locker</div></div>
+          <div class="card-body">
+            <div class="row3">
+              <div class="field"><label>Locker Count</label><input id="old-locker-count" type="number" placeholder="1" inputmode="numeric" min="0" oninput="calc('old')"></div>
+              <div class="field"><label>Locker No.</label><input id="old-locker-num" type="text" placeholder="e.g. L-5"></div>
+              <div class="field"><label>Charge/Locker (₹)</label><input id="old-locker-rate" type="number" placeholder="50" value="100" inputmode="decimal" min="0" oninput="calc('old')"></div>
+            </div>
+            <div class="subtotal-strip"><span class="sl">Locker Total</span><span class="sv" id="old-locker-sub">₹ 0</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Room Section -->
+      <div id="old-room-section" style="display:none;">
+        <div class="card">
+          <div class="card-head"><div class="ch-icon">🏠</div><div class="ch-label">Room Charges</div></div>
+          <div class="card-body">
+            <div class="field"><label>Room Rate (₹)</label><input id="old-room-rate" type="number" placeholder="e.g. 800" value="1000" inputmode="decimal" min="0" oninput="calc('old')"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment -->
+      <div class="card">
+        <div class="card-head"><div class="ch-icon">💳</div><div class="ch-label">Payment Mode</div></div>
+        <div class="card-body">
+          <div class="pay-options">
+            <button class="pay-btn" id="old-pay-cash" onclick="selectPay('old','cash')"><span>💵</span>Cash</button>
+            <button class="pay-btn" id="old-pay-gpay" onclick="selectPay('old','gpay')"><span>📱</span>GPay</button>
+            <button class="pay-btn" id="old-pay-other" onclick="selectPay('old','other')"><span>🏦</span>Other</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grand-bar">
+        <div class="gl">Grand Total (Bill Amount)</div>
+        <div class="gv" id="old-grand-total">₹ 0</div>
+      </div>
+
+      <!-- Commission Old -->
+      <div class="commission-card">
+        <div class="commission-head">
+          <div class="commission-icon">💰</div>
+          <div class="commission-label">Commission</div>
+          <div class="commission-note">Not shown on print</div>
+        </div>
+        <div class="commission-body">
+          <div class="field"><label>Commission Amount (₹)</label><input id="old-commission" type="number" placeholder="e.g. 100" inputmode="decimal" min="0" oninput="calcNet('old')"></div>
+          <div class="net-strip">
+            <span class="nl">Net Amount (after commission)</span>
+            <span class="nv" id="old-net-amount">₹ 0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Bar -->
+  <div class="action-bar">
+    <button class="btn-clear" onclick="clearForm()">Clear</button>
+    <button class="btn-save" onclick="saveBill()">💾 Save</button>
+    <button class="btn-print" onclick="printBill()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Print Bill
+    </button>
+  </div>
+</div>
+
+<!-- ══ PAGE 2: BILLS ══ -->
+<div class="page" id="page-bills">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Today's Bills</div>
+      <span class="topbar-sub" id="bills-date-sub">Loading...</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <button onclick="renderBills()" style="background:rgba(255,255,255,0.15);color:#fff;border:none;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;">🔄 Refresh</button>
+      <button onclick="saveToExcel()" style="background:rgba(255,255,255,0.15);color:#fff;border:none;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;">⬇ Excel</button>
+    </div>
+  </div>
+  <div class="bills-wrap">
+    <div class="summary-grid" id="summary-grid"></div>
+    <div id="acc-summary-card"></div>
+    <div class="bills-table-wrap">
+      <div class="bills-table-head"><span>All Bills</span><button onclick="saveToExcel()">⬇ Excel</button></div>
+      <div id="bills-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE 3: ALERTS ══ -->
+<div class="page" id="page-alerts">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Checkout Alerts</div>
+      <span class="topbar-sub">20-hour stay notifications</span>
+    </div>
+  </div>
+  <div class="alerts-wrap">
+    <div class="alert-info-box">
+      <div class="alert-info-title">🔔 How it works</div>
+      <div class="alert-info-desc">Each saved bill starts a 24-hour timer from check-in time. A popup alert appears when a guest reaches <strong>20 hours</strong> — giving you 4 hours to prepare for checkout.</div>
+    </div>
+    <div class="section-title">Active Guest Timers</div>
+    <div class="active-timers" id="active-timers"></div>
+  </div>
+</div>
+
+<!-- ══ PAGE 4: ACCESSORIES ══ -->
+<div class="page" id="page-accessories">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Accessories</div>
+      <span class="topbar-sub">Sold items — saved to Excel separately</span>
+    </div>
+  </div>
+  <div class="acc-wrap">
+    <div class="acc-hero-note">Tap + to add items. Each sale is saved separately in Excel.</div>
+
+    <div class="acc-grid" id="acc-grid">
+      <!-- Items rendered by JS -->
+    </div>
+
+    <div style="margin-top:12px;">
+      <div class="acc-total-bar">
+        <div class="atl">Accessories Total</div>
+        <div class="atv" id="acc-grand-total">₹ 0</div>
+      </div>
+      <div class="acc-save-bar">
+        <button class="btn-acc-clear" onclick="clearAccessories()">Reset</button>
+        <button class="btn-acc-save" onclick="saveAccessories()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save to Excel
+        </button>
+      </div>
+    </div>
+
+    <div class="acc-history">
+      <div class="acc-history-head"><span>Today's Accessory Sales</span></div>
+      <div id="acc-log-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE 5: MONITOR ══ -->
+<div class="page" id="page-monitor">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Live Monitor</div>
+      <span class="topbar-sub">Anandha Wedding Hall — Real-time view</span>
+    </div>
+    <div style="width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;" id="monitor-dot"></div>
+  </div>
+  <div class="monitor-wrap">
+    <div class="monitor-live-badge">
+      <div class="live-dot"></div>
+      <div class="live-text">Live — Anandha Wedding Hall bills updating in real time</div>
+      <div class="live-time" id="monitor-last-update">--</div>
+    </div>
+    <div class="monitor-summary" id="monitor-summary"></div>
+    <div style="background:var(--card);border-radius:var(--r);border:0.5px solid var(--border);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+      <div class="bills-table-head"><span>Anandha Wedding Hall Bills Today</span></div>
+      <div id="monitor-bills-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE 6: OVERVIEW ══ -->
+<div class="page" id="page-overview">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Overview</div>
+      <span class="topbar-sub" id="overview-branch-sub">Sales summary</span>
+    </div>
+  </div>
+  <div class="overview-wrap">
+
+    <!-- Storage Card -->
+    <div class="storage-card" style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;">Firebase Storage</span>
+        <strong id="ov-est-usage" style="font-size:12px;color:var(--gd);">Loading...</strong>
+      </div>
+      <div class="storage-bar-wrap"><div class="storage-bar" id="ov-storage-bar" style="width:1%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:3px;">
+        <span id="ov-storage-pct">0% used</span><span>1 GB free limit</span>
+      </div>
+    </div>
+
+    <!-- Date Range Controls -->
+    <div class="chart-card" style="margin-bottom:10px;">
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+        <button class="chart-tog-btn active" id="qbtn-7d" onclick="setQuickRange(7,'daily')">7 Days</button>
+        <button class="chart-tog-btn" id="qbtn-30d" onclick="setQuickRange(30,'daily')">30 Days</button>
+        <button class="chart-tog-btn" id="qbtn-3m" onclick="setQuickRange(90,'monthly')">3 Months</button>
+        <button class="chart-tog-btn" id="qbtn-6m" onclick="setQuickRange(180,'monthly')">6 Months</button>
+        <button class="chart-tog-btn" id="qbtn-1y" onclick="setQuickRange(365,'monthly')">1 Year</button>
+        <button class="chart-tog-btn" id="qbtn-custom" onclick="toggleCustomRange()">Custom</button>
+      </div>
+      <div id="custom-range-row" style="display:none;gap:8px;align-items:center;flex-wrap:wrap;">
+        <div class="field" style="flex:1;min-width:120px;">
+          <label>From Date</label>
+          <input type="date" id="range-from" style="padding:8px;font-size:13px;border:1px solid var(--border);border-radius:var(--rs);background:#fafaf8;color:var(--text);outline:none;width:100%;">
+        </div>
+        <div class="field" style="flex:1;min-width:120px;">
+          <label>To Date</label>
+          <input type="date" id="range-to" style="padding:8px;font-size:13px;border:1px solid var(--border);border-radius:var(--rs);background:#fafaf8;color:var(--text);outline:none;width:100%;">
+        </div>
+        <button onclick="applyCustomRange()" style="background:var(--gd);color:#fff;border:none;border-radius:var(--rs);padding:10px 14px;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;align-self:flex-end;">Apply</button>
+      </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="overview-stats" id="overview-stats"></div>
+
+    <!-- Bar Chart: Sales over time -->
+    <div class="chart-card">
+      <div class="chart-title" id="chart-title">Last 7 Days Sales</div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#1D9E75;"></div>Bills (Net)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div>Accessories</div>
+      </div>
+      <canvas id="sales-chart" height="200"></canvas>
+    </div>
+
+    <!-- Pie Chart 1: Cash vs GPay vs Commission -->
+    <div class="chart-card">
+      <div class="chart-title">Payment Breakdown</div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#1D9E75;"></div>Cash</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2563eb;"></div>GPay</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div>Commission</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#9ca3af;"></div>Other</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <canvas id="pie-payment" height="180" style="max-width:180px;"></canvas>
+        <div id="pie-payment-labels" style="flex:1;font-size:11px;display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+    </div>
+
+    <!-- Pie Chart 2: Room vs Hall vs Accessories Amount -->
+    <div class="chart-card">
+      <div class="chart-title">Revenue by Type</div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#7c3aed;"></div>Room</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#0891b2;"></div>Hall</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div>Accessories</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <canvas id="pie-type" height="180" style="max-width:180px;"></canvas>
+        <div id="pie-type-labels" style="flex:1;font-size:11px;display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+    </div>
+
+    <!-- Pie Chart 3: Room bill count vs Hall bill count -->
+    <div class="chart-card">
+      <div class="chart-title">Bills Count: Room vs Hall</div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#7c3aed;"></div>Room Bills</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#0891b2;"></div>Hall Bills</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <canvas id="pie-count" height="180" style="max-width:180px;"></canvas>
+        <div id="pie-count-labels" style="flex:1;font-size:11px;display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ PAGE 7: ADMIN ══ -->
+<div class="page" id="page-admin">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Admin Panel</div>
+      <span class="topbar-sub">View, edit & delete bills — all branches</span>
+    </div>
+    <div class="topbar-pill">🔑 Admin</div>
+  </div>
+  <div class="admin-wrap">
+    <!-- Main Tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button class="admin-tab active" id="admin-main-tab" onclick="switchAdminTab('main')" style="flex:1;">📋 Bills</button>
+      <button class="admin-tab" id="admin-storage-tab" onclick="switchAdminTab('storage')" style="flex:1;">💾 Storage</button>
+    </div>
+
+    <!-- Bills Section -->
+    <div id="admin-main-section">
+      <div class="admin-branch-tabs">
+        <button class="admin-tab active" id="atab-1" onclick="switchAdminBranch(1)">🏠 Girivalam Home Stay</button>
+        <button class="admin-tab" id="atab-2" onclick="switchAdminBranch(2)">🏪 Anandha Wedding Hall</button>
+      </div>
+      <div class="admin-date-row">
+        <input type="date" id="admin-date-picker">
+        <button class="admin-load-btn" onclick="loadAdminBills()">Load Bills</button>
+      </div>
+      <div class="admin-summary" id="admin-summary"></div>
+      <div id="admin-bills-container"><div class="admin-empty">📅 Select a date and tap Load Bills</div></div>
+    </div>
+
+    <!-- Storage Section -->
+    <div id="admin-storage-section" style="display:none;">
+      <div class="storage-card">
+        <div class="storage-stat"><span>Firebase Free Limit</span><strong>1 GB</strong></div>
+        <div class="storage-stat"><span>Estimated Usage</span><strong id="est-usage">Calculating...</strong></div>
+        <div class="storage-bar-wrap"><div class="storage-bar" id="storage-bar" style="width:1%"></div></div>
+        <div class="storage-stat"><span id="storage-pct">0%</span><span>used</span></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;">Each bill ≈ 0.5KB slim format. 1GB holds ~2 million bills.</div>
+      </div>
+
+      <div class="storage-section-title">Monthly Data — Export & Delete</div>
+      <div class="storage-card">
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <button class="admin-tab active" id="stab-1" onclick="switchStorageBranch(1)" style="flex:1;font-size:11px;">🏠 Branch 1</button>
+          <button class="admin-tab" id="stab-2" onclick="switchStorageBranch(2)" style="flex:1;font-size:11px;">🏪 Branch 2</button>
+        </div>
+        <div id="monthly-list"><div class="admin-empty">Click Storage tab to load</div></div>
+      </div>
+
+      <div class="storage-section-title">Auto-Delete Old Data</div>
+      <div class="storage-card">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Delete bills older than selected period to free up storage.</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <select id="auto-delete-period" style="flex:1;border:1px solid var(--border);border-radius:var(--rs);padding:9px;font-size:13px;font-family:'DM Sans',sans-serif;background:#fafaf8;color:var(--text);outline:none;">
+            <option value="30">Older than 30 days</option>
+            <option value="60">Older than 60 days</option>
+            <option value="90">Older than 90 days</option>
+            <option value="180">Older than 6 months</option>
+            <option value="365">Older than 1 year</option>
+          </select>
+          <button onclick="autoDeleteOldData()" style="background:#ef4444;color:#fff;border:none;border-radius:var(--rs);padding:10px 14px;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;">🗑 Delete Old Bills</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE: HISTORY ══ -->
+<div class="page" id="page-history">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Bill History</div>
+      <span class="topbar-sub">Search bills by date — both branches</span>
+    </div>
+  </div>
+  <div class="history-wrap">
+
+    <!-- Date Picker -->
+    <div class="history-search-card">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:10px;">Select Date</div>
+      <div style="display:flex;gap:8px;align-items:flex-end;">
+        <div class="field" style="flex:1;">
+          <label>Date</label>
+          <input type="date" id="history-date" style="padding:11px 10px;font-size:15px;border:1px solid var(--border);border-radius:var(--rs);background:#fafaf8;color:var(--text);outline:none;width:100%;">
+        </div>
+        <button onclick="loadHistory()" class="history-load-btn">Search</button>
+      </div>
+      <!-- Quick date buttons -->
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+        <button class="history-quick-btn" onclick="setHistoryDate(0)">Today</button>
+        <button class="history-quick-btn" onclick="setHistoryDate(1)">Yesterday</button>
+        <button class="history-quick-btn" onclick="setHistoryDate(7)">7 Days Ago</button>
+        <button class="history-quick-btn" onclick="setHistoryDate(30)">30 Days Ago</button>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div id="history-summary" style="display:none;">
+      <div class="summary-grid" id="history-summary-cards" style="margin-bottom:10px;"></div>
+    </div>
+
+    <!-- Branch 1 Bills -->
+    <div id="history-branch1-wrap" style="display:none;">
+      <div class="history-branch-label">🏠 Girivalam Home Stay</div>
+      <div class="bills-table-wrap" style="margin-bottom:10px;">
+        <div id="history-branch1-list"></div>
+      </div>
+    </div>
+
+    <!-- Branch 2 Bills -->
+    <div id="history-branch2-wrap" style="display:none;">
+      <div class="history-branch-label">🏪 Anandha Wedding Hall</div>
+      <div class="bills-table-wrap" style="margin-bottom:10px;">
+        <div id="history-branch2-list"></div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="history-empty" style="text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;display:none;">
+      📭 No bills found for this date
+    </div>
+
+    <!-- Initial state -->
+    <div id="history-initial" style="text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;">
+      📅 Select a date above to view bills
+    </div>
+
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /app-layout -->
+
+<!-- POPUP -->
+<div class="popup-overlay" id="popup-overlay">
+  <div class="popup-box">
+    <div class="popup-icon">⚠️</div>
+    <div class="popup-title">Checkout Alert!</div>
+    <div class="popup-guest" id="popup-guest"></div>
+    <div class="popup-receipt" id="popup-receipt"></div>
+    <div class="popup-msg" id="popup-msg"></div>
+    <button class="popup-btn" onclick="closePopup()">OK, Got It</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+</div><!-- /main-app -->
+
+<!-- PRINT -->
+<div id="bill-preview">
+  <div class="bill-sheet">
+    <div class="bill-header">
+      <div class="bill-lodge-name">Girivalam Home Stay</div>
+      <div class="bill-address">No. 70, Sannathi Street, Tiruvannamalai — 606 601</div>
+      <div class="bill-phone">Cell: 9442293933</div>
+    </div>
+    <div class="bill-title-bar">Guest Receipt</div>
+    <table class="bill-table">
+      <tr><td>Receipt No.</td><td id="b-receipt-no"></td></tr>
+      <tr><td>Date</td><td id="b-date"></td></tr>
+      <tr><td>Time</td><td id="b-time"></td></tr>
+      <tr><td>Guest Name</td><td id="b-name"></td></tr>
+      <tr id="b-members-row"><td>Total Members</td><td id="b-members"></td></tr>
+      <tr id="b-room-row"><td>Room Number</td><td id="b-room-num"></td></tr>
+      <tr id="b-locker-row"><td>Locker Number</td><td id="b-locker-num"></td></tr>
+      <tr class="bill-total-row"><td>Total Amount</td><td id="b-total"></td></tr>
+    </table>
+    <div class="bill-sig">
+      <span>Guest Signature: _______________</span>
+      <span>Authorized Signatory: _______________</span>
+    </div>
+    <div class="bill-footer">Thank you for choosing Girivalam Home Stay • Tiruvannamalai</div>
+  </div>
+</div>
+
+<script>
+// ── GLOBAL STATE (must be at top) ──
+var _activeBillsCache = [];
+var currentBranch = 1;
+var firebaseDB = null;
+var salesChart = null;
+var chartMode = 'daily';
+var adminBranch = 1;
+var adminBillsCache = {};
+var selectedPay = {};
+var accCounts = {};
+var accPrices = {};
+var activeTab = 'new';
+var stayType = { new: 'hall', old: 'hall' };
+var payMode = { new: '', old: '' };
+
+const EMAILJS_CONFIG={serviceId:'YOUR_SERVICE_ID',templateId:'YOUR_TEMPLATE_ID',publicKey:'YOUR_PUBLIC_KEY'};
+
+// ── STATE ──
+
+
+
+
+// ── CLOCK ──
+function updateClock(){
+  const now=new Date();
+  const h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
+  const ampm=h>=12?'PM':'AM'; const h12=(h%12)||12;
+  const p=n=>String(n).padStart(2,'0');
+  document.getElementById('dc-time').textContent=`${p(h12)}:${p(m)} ${ampm}`;
+  document.getElementById('dc-date').textContent=`${p(now.getDate())}/${p(now.getMonth()+1)}`;
+  // Auto-fill only new bill date/time
+  document.getElementById('new-date').value=`${p(now.getDate())}/${p(now.getMonth()+1)}/${now.getFullYear()}`;
+  document.getElementById('new-time').value=`${p(h12)}:${p(m)} ${ampm}`;
+  if(h===0&&m===0&&s===0) localStorage.removeItem('ghs_receipt');
+  checkAlerts();
+}
+setInterval(updateClock,1000);
+updateClock();
+
+// ── PAGE NAV ──
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.d-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('dbtn-'+name).classList.add('active');
+  if(name==='bills') renderBills();
+  if(name==='alerts') renderTimers();
+  if(name==='accessories'){ renderAccGrid(); renderAccLog(); }
+  window.scrollTo(0,0);
+}
+
+// ── TAB SWITCH ──
+function switchTab(tab){
+  activeTab=tab;
+  document.getElementById('tab-new').classList.toggle('active',tab==='new');
+  document.getElementById('tab-old').classList.toggle('active',tab==='old');
+  document.getElementById('form-new').classList.toggle('active',tab==='new');
+  document.getElementById('form-old').classList.toggle('active',tab==='old');
+  updateReceiptDisplays();
+}
+
+// ── STAY TYPE ──
+function setType(form, type){
+  stayType[form]=type;
+  document.getElementById(`${form}-type-hall`).classList.toggle('active',type==='hall');
+  document.getElementById(`${form}-type-room`).classList.toggle('active',type==='room');
+  document.getElementById(`${form}-hall-section`).style.display = type==='hall'?'block':'none';
+  document.getElementById(`${form}-room-section`).style.display = type==='room'?'block':'none';
+  document.getElementById(`${form}-room-field`).style.display  = type==='room'?'block':'none';
+  calc(form);
+}
+
+// ── PAYMENT ──
+function selectPay(form,m){
+  payMode[form]=m;
+  ['cash','gpay','other'].forEach(x=>document.getElementById(`${form}-pay-${x}`).classList.toggle('active',x===m));
+}
+
+// ── RECEIPT ──
+function getTodayKey(){const n=new Date();const p=x=>String(x).padStart(2,'0');return `${p(n.getDate())}:${p(n.getMonth()+1)}:${n.getFullYear()}`;}
+function getNextNum(){
+  const key=getTodayKey();
+  const stored=JSON.parse(localStorage.getItem('ghs_receipt')||'{}');
+  return (stored.date===key?stored.num:0)+1;
+}
+function getNextReceipt(){const n=getNextNum();return `${getTodayKey()}-${String(n).padStart(3,'0')}`;}
+function incrementReceipt(){
+  const key=getTodayKey();
+  const stored=JSON.parse(localStorage.getItem('ghs_receipt')||'{}');
+  const num=(stored.date===key?stored.num:0)+1;
+  localStorage.setItem('ghs_receipt',JSON.stringify({date:key,num}));
+  updateReceiptDisplays();
+  return `${key}-${String(num).padStart(3,'0')}`;
+}
+function updateReceiptDisplays(){
+  const r=getNextReceipt();
+  document.getElementById('new-receipt-display').textContent=r;
+  document.getElementById('old-receipt-display').textContent=r;
+}
+updateReceiptDisplays();
+
+// ── CALC ──
+function fmtINR(n){return '₹ '+(n||0).toLocaleString('en-IN');}
+function fmtINRfull(n){return '₹ '+parseFloat(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function calc(form){
+  let total=0;
+  if(stayType[form]==='hall'){
+    const me=parseFloat(document.getElementById(`${form}-members`).value)||0;
+    const ra=parseFloat(document.getElementById(`${form}-rate`).value)||0;
+    const lc=parseFloat(document.getElementById(`${form}-locker-count`).value)||0;
+    const lr=parseFloat(document.getElementById(`${form}-locker-rate`).value)||0;
+    document.getElementById(`${form}-member-sub`).textContent=fmtINR(me*ra);
+    document.getElementById(`${form}-locker-sub`).textContent=fmtINR(lc*lr);
+    total=(me*ra)+(lc*lr);
+  } else {
+    total=parseFloat(document.getElementById(`${form}-room-rate`).value)||0;
+  }
+  document.getElementById(`${form}-grand-total`).textContent=fmtINR(total);
+  calcNet(form);
+}
+function calcNet(form){
+  const grand=parseFloat((document.getElementById(`${form}-grand-total`).textContent||'0').replace(/[^0-9.]/g,''))||0;
+  const comm=parseFloat(document.getElementById(`${form}-commission`).value)||0;
+  const net=Math.max(0,grand-comm);
+  document.getElementById(`${form}-net-amount`).textContent=fmtINR(net);
+}
+
+// ── GET BILL DATA ──
+function getBillData(){
+  const form=activeTab;
+  const type=stayType[form];
+  const me=parseFloat(document.getElementById(`${form}-members`)?.value)||0;
+  const ra=parseFloat(document.getElementById(`${form}-rate`)?.value)||0;
+  const lc=parseFloat(document.getElementById(`${form}-locker-count`)?.value)||0;
+  const lr=parseFloat(document.getElementById(`${form}-locker-rate`)?.value)||0;
+  const rr=parseFloat(document.getElementById(`${form}-room-rate`)?.value)||0;
+  const grandTotal=type==='hall'?(me*ra)+(lc*lr):rr;
+  const commission=parseFloat(document.getElementById(`${form}-commission`).value)||0;
+  const netAmount=Math.max(0,grandTotal-commission);
+  return{
+    receiptNo:getNextReceipt(),
+    billType:form,
+    stayType:type,
+    name:document.getElementById(`${form}-name`).value||'-',
+    mobile:document.getElementById(`${form}-mobile`).value||'-',
+    aadhaar:document.getElementById(`${form}-aadhaar`).value||'-',
+    date:(()=>{
+      const v=document.getElementById(`${form}-date`).value||'';
+      if(!v) return '-';
+      if(form==='old' && v.includes('-')){
+        // Convert from YYYY-MM-DD to DD/MM/YYYY
+        const p=v.split('-'); return `${p[2]}/${p[1]}/${p[0]}`;
+      }
+      return v;
+    })(),
+    time:(()=>{
+      const v=document.getElementById(`${form}-time`).value||'';
+      if(!v) return '-';
+      if(form==='old' && v.includes(':')){
+        // Convert from HH:MM to 12hr format
+        const [hh,mm]=v.split(':'); const h=parseInt(hh);
+        const ampm=h>=12?'PM':'AM'; const h12=(h%12)||12;
+        return `${String(h12).padStart(2,'0')}:${mm} ${ampm}`;
+      }
+      return v;
+    })(),
+    checkinTs:Date.now(),
+    roomNum:document.getElementById(`${form}-room-num`)?.value||'-',
+    members:me, rate:ra, memberTotal:me*ra,
+    lockerCount:lc, lockerNum:document.getElementById(`${form}-locker-num`)?.value||'-',
+    lockerRate:lr, lockerTotal:lc*lr,
+    roomRate:rr,
+    commission, netAmount,
+    payMode:payMode[form]?payMode[form].toUpperCase():'NOT SELECTED',
+    grandTotal
+  };
+}
+
+// ── SAVE ──
+function getBillsKey(){return 'ghs_bills_'+getTodayKey().replace(/:/g,'-');}
+function getFirebaseBillsPath(branch, dateKey){ return `branch${branch}/bills/${dateKey}`; }
+function getFirebaseAccPath(branch, dateKey){ return `branch${branch}/accessories/${dateKey}`; }
+function saveBill(){
+  const d=getBillData();
+  if(d.name==='-'||!d.name){showToast('Please enter guest name');return;}
+  d.receiptNo=incrementReceipt();
+  const bills=JSON.parse(localStorage.getItem(getBillsKey())||'[]');
+  bills.push(d);
+  localStorage.setItem(getBillsKey(),JSON.stringify(bills));
+  updateBadges();
+  showToast('✅ Saved! '+d.receiptNo);
+}
+
+// ── PRINT ──
+function printBill(){
+  const d=getBillData();
+  const isHall=d.stayType==='hall';
+  document.getElementById('b-receipt-no').textContent=d.receiptNo;
+  document.getElementById('b-date').textContent=d.date;
+  document.getElementById('b-time').textContent=d.time;
+  document.getElementById('b-name').textContent=d.name;
+  // Members row — show only for Hall
+  document.getElementById('b-members-row').style.display=isHall?'':'none';
+  document.getElementById('b-members').textContent=d.members||'-';
+  // Room row — show only for Room
+  document.getElementById('b-room-row').style.display=isHall?'none':'';
+  document.getElementById('b-room-num').textContent=d.roomNum;
+  // Locker row — show only for Hall
+  document.getElementById('b-locker-row').style.display=isHall?'':'none';
+  document.getElementById('b-locker-num').textContent=d.lockerNum;
+  document.getElementById('b-total').textContent=fmtINRfull(d.grandTotal);
+  document.getElementById('bill-preview').style.display='block';
+  window.print();
+  document.getElementById('bill-preview').style.display='none';
+}
+
+// ── CLEAR ──
+function clearForm(){
+  const form=activeTab;
+  ['name','mobile','aadhaar','locker-num','room-num'].forEach(id=>{
+    const el=document.getElementById(`${form}-${id}`);
+    if(el) el.value='';
+  });
+  ['members','rate','locker-count','locker-rate','room-rate'].forEach(id=>{
+    const el=document.getElementById(`${form}-${id}`);
+    if(el) el.value='';
+  });
+  if(form==='old'){
+    document.getElementById('old-date').value='';
+    document.getElementById('old-time').value='';
+  }
+  // Reset net amount display
+  const netEl = document.getElementById(`${form}-net-amount`);
+  if(netEl) netEl.textContent='₹ 0';
+  const commEl = document.getElementById(`${form}-commission`);
+  if(commEl) commEl.value='';
+  payMode[form]='';
+  ['cash','gpay','other'].forEach(m=>document.getElementById(`${form}-pay-${m}`).classList.remove('active'));
+  document.getElementById(`${form}-grand-total`).textContent='₹ 0';
+  document.getElementById(`${form}-commission`).value='';
+  document.getElementById(`${form}-net-amount`).textContent='₹ 0';
+  if(stayType[form]==='hall'){
+    document.getElementById(`${form}-member-sub`).textContent='₹ 0';
+    document.getElementById(`${form}-locker-sub`).textContent='₹ 0';
+  }
+}
+
+// ── RENDER BILLS ──
+// Expand slim bill to full format for display
+function expandBill(b){
+  if(b.name) return b; // already full format
+  return {
+    receiptNo:b.rn||b.receiptNo||'-', branch:b.br||b.branch,
+    billType:b.bt||b.billType||'new', stayType:b.st||b.stayType||'hall',
+    name:b.nm||b.name||'-', mobile:b.mb||b.mobile||'-',
+    aadhaar:b.ad||b.aadhaar||'-', date:b.dt||b.date||'-',
+    time:b.tm||b.time||'-', checkinTs:b.ts||b.checkinTs||Date.now(),
+    payMode:b.pm||b.payMode||'-', grandTotal:b.gt||b.grandTotal||0,
+    commission:b.cm||b.commission||0, netAmount:b.na||b.netAmount||b.gt||0,
+    members:b.me||b.members||0, rate:b.ra||b.rate||0,
+    memberTotal:(b.me||0)*(b.ra||0),
+    lockerCount:b.lc||b.lockerCount||0, lockerNum:b.ln||b.lockerNum||'-',
+    lockerRate:b.lr||b.lockerRate||0, lockerTotal:(b.lc||0)*(b.lr||0),
+    roomNum:b.rn2||b.roomNum||'-', roomRate:b.rr||b.roomRate||0
+  };
+}
+
+function renderBills(){
+  const now=new Date();const p=x=>String(x).padStart(2,'0');
+  const dateKey=getTodayKey().replace(/:/g,'-');
+  document.getElementById('bills-date-sub').textContent=`${p(now.getDate())}/${p(now.getMonth()+1)}/${now.getFullYear()} — loading...`;
+  if(!firebaseDB){ document.getElementById('bills-list').innerHTML='<div class="no-bills">⚠️ Not connected to cloud</div>'; return; }
+  firebaseDB.ref(getFirebaseBillsPath(currentBranch, dateKey)).once('value', snap=>{
+    const data=snap.val();
+    const bills=(data?Object.values(data):[]).map(expandBill);
+    document.getElementById('bills-date-sub').textContent=`${p(now.getDate())}/${p(now.getMonth()+1)}/${now.getFullYear()} — ${bills.length} bill${bills.length!==1?'s':''}`;
+    const net=b=>b.commission>0?(b.netAmount||0):(b.grandTotal||0);
+    const tot=bills.reduce((s,b)=>s+net(b),0);
+    const grossTot=bills.reduce((s,b)=>s+(b.grandTotal||0),0);
+    const totalComm=bills.reduce((s,b)=>s+(b.commission||0),0);
+    const cashAmt=bills.filter(b=>b.payMode==='CASH').reduce((s,b)=>s+net(b),0);
+    const gpayAmt=bills.filter(b=>b.payMode==='GPAY').reduce((s,b)=>s+net(b),0);
+    document.getElementById('summary-grid').innerHTML=`
+      <div class="sum-card"><div class="sc-label">Total Bills</div><div class="sc-val">${bills.length}</div><div class="sc-sub">Today</div></div>
+      <div class="sum-card"><div class="sc-label">Net Collection</div><div class="sc-val">${fmtINR(tot)}</div><div class="sc-sub">Gross ${fmtINR(grossTot)}${totalComm>0?' · Comm '+fmtINR(totalComm):''}</div></div>
+      <div class="sum-card"><div class="sc-label">Cash (Net)</div><div class="sc-val">${fmtINR(cashAmt)}</div><div class="sc-sub">${bills.filter(b=>b.payMode==='CASH').length} bills</div></div>
+      <div class="sum-card"><div class="sc-label">GPay (Net)</div><div class="sc-val">${fmtINR(gpayAmt)}</div><div class="sc-sub">${bills.filter(b=>b.payMode==='GPAY').length} bills</div></div>`;
+    // Accessories from Firebase
+    const accDateKey=getTodayKey().replace(/:/g,'-');
+    firebaseDB.ref(getFirebaseAccPath(currentBranch, accDateKey)).once('value', accSnap=>{
+      const accData=accSnap.val();
+      const accLogs=accData?Object.values(accData):[];
+      const accTotal=accLogs.reduce((s,l)=>s+(l.total||0),0);
+      const accSummaryEl=document.getElementById('acc-summary-card');
+      if(accSummaryEl){
+        if(accLogs.length>0){
+          const itemTotals={};
+          accLogs.forEach(l=>l.items&&l.items.forEach(i=>{if(!itemTotals[i.name])itemTotals[i.name]={qty:0,total:0};itemTotals[i.name].qty+=i.qty;itemTotals[i.name].total+=i.subtotal;}));
+          const rows=Object.entries(itemTotals).map(([name,v])=>`<div style="display:flex;justify-content:space-between;padding:5px 12px;border-bottom:0.5px solid var(--border);font-size:12px;"><span style="color:var(--muted)">${name} ×${v.qty}</span><span style="font-weight:600;color:var(--gd)">${fmtINR(v.total)}</span></div>`).join('');
+          accSummaryEl.innerHTML=`<div style="background:var(--card);border-radius:var(--r);border:0.5px solid var(--border);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);margin-bottom:12px;"><div style="background:#fff8e1;border-bottom:0.5px solid #fcd34d;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:10px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#92400e;">🛍️ Accessories Total</span><span style="font-size:16px;font-weight:700;color:#92400e;font-family:'Playfair Display',serif;">${fmtINR(accTotal)}</span></div>${rows}</div>`;
+        } else { accSummaryEl.innerHTML=''; }
+      }
+    });
+
+    const list=document.getElementById('bills-list');
+    if(!bills.length){list.innerHTML='<div class="no-bills">📭 No bills saved today</div>';return;}
+    list.innerHTML=bills.slice().reverse().map(b=>{
+      const pc=b.payMode==='CASH'?'pay-cash':b.payMode==='GPAY'?'pay-gpay':b.payMode==='OTHER'?'pay-other':'pay-na';
+      const btag=b.billType==='new'?'<span class="tag tag-new">New</span>':'<span class="tag tag-old">Old</span>';
+      const stag=b.stayType==='room'?'<span class="tag tag-room">Room</span>':'<span class="tag tag-hall">Hall</span>';
+      const dispAmt = b.commission>0 ? `${fmtINR(b.netAmount)}<span style='font-size:9px;color:var(--muted);display:block;text-align:right;'>gross ${fmtINR(b.grandTotal)}</span>` : fmtINR(b.grandTotal);
+      return`<div class="bill-row"><div class="bill-row-top"><div class="bill-row-name">${b.name}</div><div class="bill-row-amt">${dispAmt}</div></div><div class="bill-row-bot"><div class="bill-row-no">${b.receiptNo} • ${b.time}</div><div style="display:flex;gap:4px;flex-wrap:wrap;">${btag}${stag}<span class="tag ${pc}">${b.payMode}</span></div></div></div>`;
+    }).join('');
+  }); // end bills firebase
+}
+
+// ── BADGES ──
+function updateBadges(){
+  if(!firebaseDB){ return; }
+  const dateKey=getTodayKey().replace(/:/g,'-');
+  firebaseDB.ref(getFirebaseBillsPath(currentBranch, dateKey)).once('value', snap=>{
+    const data=snap.val();
+    const count=data?Object.keys(data).length:0;
+    document.getElementById('bills-badge').textContent=count;
+  });
+  const ac=getAlertCount();
+  const ab=document.getElementById('alert-badge');
+  if(ac>0){ab.textContent=ac;ab.classList.remove('hidden');}
+  else ab.classList.add('hidden');
+}
+
+// ── ALERTS ──
+const alerted20=new Set();
+function getHoursElapsed(ts){return(Date.now()-ts)/3600000;}
+function getAlertCount(){return getAllActiveBills().filter(b=>{const h=getHoursElapsed(b.checkinTs);return h>=20&&h<24;}).length;}
+// Active bills cache for alerts (refreshed from Firebase)
+
+function refreshActiveBillsCache(){
+  if(!firebaseDB) return;
+  const now=new Date(); const p=x=>String(x).padStart(2,'0');
+  let allBills=[];
+  let pending=2;
+  for(let i=0;i<2;i++){
+    const d=new Date(now.getTime()-i*86400000);
+    const dateKey=`${p(d.getDate())}-${p(d.getMonth()+1)}-${d.getFullYear()}`;
+    firebaseDB.ref(getFirebaseBillsPath(currentBranch, dateKey)).once('value', snap=>{
+      const data=snap.val();
+      const bills=data?Object.values(data):[];
+      allBills=allBills.concat(bills.filter(x=>getHoursElapsed(x.checkinTs)<24));
+      pending--;
+      if(pending===0){ _activeBillsCache=allBills; checkAlerts(); }
+    });
+  }
+}
+function getAllActiveBills(){ return _activeBillsCache; }
+function checkAlerts(){
+  getAllActiveBills().forEach(b=>{
+    const h=getHoursElapsed(b.checkinTs);
+    const key=b.receiptNo+'_20h';
+    if(h>=20&&!alerted20.has(key)){alerted20.add(key);showAlertPopup(b,h);}
+  });
+  updateBadges();
+}
+function showAlertPopup(b,h){
+  const rem=Math.max(0,24-h);
+  document.getElementById('popup-guest').textContent=b.name;
+  document.getElementById('popup-receipt').textContent='Receipt: '+b.receiptNo+' • Check-in: '+b.time;
+  document.getElementById('popup-msg').textContent=`Guest has completed 20 hours. Only ${rem.toFixed(1)} hours remaining. Please notify the guest.`;
+  document.getElementById('popup-overlay').classList.add('show');
+}
+function closePopup(){document.getElementById('popup-overlay').classList.remove('show');}
+function renderTimers(){
+  refreshActiveBillsCache();
+  const bills=getAllActiveBills();
+  const c=document.getElementById('active-timers');
+  if(!bills.length){c.innerHTML='<div class="no-timers">✅ No active guests right now</div>';return;}
+  c.innerHTML=bills.map(b=>{
+    const h=getHoursElapsed(b.checkinTs);
+    const rem=Math.max(0,24-h);
+    let icon,cc,hc;
+    if(h>=24){icon='🔴';cc='expired';hc='gray';}
+    else if(h>=20){icon='⚠️';cc='danger';hc='red';}
+    else if(h>=18){icon='🟡';cc='warning';hc='amber';}
+    else{icon='🟢';cc='';hc='green';}
+    return`<div class="timer-card ${cc}"><div class="tc-icon">${icon}</div><div class="tc-info"><div class="tc-name">${b.name}</div><div class="tc-receipt">${b.receiptNo} • ${b.stayType==='room'?'🏠 Room':'🛏️ Hall'}</div><div class="tc-time">Check-in: ${b.date} ${b.time}</div></div><div class="tc-countdown"><div class="tc-hrs ${hc}">${rem<1?(rem*60).toFixed(0)+'m':rem.toFixed(1)+'h'}</div><div class="tc-label">${h>=24?'Expired':'remaining'}</div></div></div>`;
+  }).join('');
+}
+setInterval(()=>{if(document.getElementById('page-alerts').classList.contains('active'))renderTimers();updateBadges();},60000);
+
+// ── EXCEL ──
+function saveToExcel(){
+  if(!firebaseDB){showToast('⚠️ Not connected to cloud');return;}
+  const dateKey=getTodayKey().replace(/:/g,'-');
+  showToast('📥 Loading from cloud...');
+  firebaseDB.ref(getFirebaseBillsPath(currentBranch, dateKey)).once('value', snap=>{
+    const data=snap.val();
+    const bills=(data?Object.values(data):[]).map(expandBill);
+    if(!bills.length){showToast('No bills saved today!');return;}
+  const wb=XLSX.utils.book_new();
+  bills.forEach((b,i)=>{
+    const isHall=b.stayType==='hall';
+    const rows=[
+      ['GIRIVALAM HOME STAY'],['No. 70, Sannathi Street, Tiruvannamalai — 606 601'],['Cell: 9442293933'],[],
+      ['Receipt No:',b.receiptNo],['Bill Type:',b.billType==='new'?'New Bill':'Old Bill'],['Stay Type:',isHall?'Hall':'Room'],
+      ['Date:',b.date],['Time:',b.time],[],
+      ['GUEST DETAILS'],['Name',b.name],['Mobile',b.mobile],['Aadhaar',b.aadhaar],[],
+      ...(isHall?[
+        ['MEMBERS'],['No. of Members',b.members],['Rate per Person (₹)',b.rate],['Member Total (₹)',b.memberTotal],[],
+        ['LOCKER'],['Locker Count',b.lockerCount],['Locker Number',b.lockerNum],['Charge per Locker (₹)',b.lockerRate],['Locker Total (₹)',b.lockerTotal],[]
+      ]:[
+        ['ROOM'],['Room Number',b.roomNum],['Room Rate (₹)',b.roomRate],[]
+      ]),
+      ['Payment Mode',b.payMode],['Gross Total (₹)',b.grandTotal],['Commission (₹)',b.commission||0],['Net Amount (₹)',b.netAmount||b.grandTotal],
+    ];
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:22},{wch:28}];
+    XLSX.utils.book_append_sheet(wb,ws,'Bill-'+String(i+1).padStart(3,'0'));
+  });
+    XLSX.writeFile(wb,`GHS_Bills_${getTodayKey().replace(/:/g,'-')}.xlsx`);
+    showToast('✅ Excel downloaded!');
+  }); // end firebase
+}
+
+// ── EMAIL ──
+function sendEmail(){
+  const email=document.getElementById('f-email').value.trim();
+  if(!email){showToast('Please enter email address');return;}
+  if(EMAILJS_CONFIG.publicKey==='YOUR_PUBLIC_KEY'){showToast('⚙️ Setup EmailJS config first!');return;}
+  const dateKey=getTodayKey().replace(/:/g,'-');
+  if(!firebaseDB){showToast('⚠️ Not connected');return;}
+  firebaseDB.ref(getFirebaseBillsPath(currentBranch, dateKey)).once('value', snap=>{
+    const data=snap.val(); const bills=data?Object.values(data):[];
+    const summary=bills.map(b=>`${b.receiptNo} | ${b.name} | ${(b.stayType||'').toUpperCase()} | ${b.payMode} | ₹${b.grandTotal}`).join('\n');
+  const params={to_email:email,subject:`GHS Bills - ${getTodayKey()}`,message:`Girivalam Home Stay\nDate: ${getTodayKey()}\nTotal Bills: ${bills.length}\n\n${summary||'No bills today'}`};
+  showToast('📤 Sending...');
+    if(typeof emailjs!=='undefined'){
+      emailjs.send(EMAILJS_CONFIG.serviceId,EMAILJS_CONFIG.templateId,params,EMAILJS_CONFIG.publicKey)
+        .then(()=>showToast('✅ Email sent!')).catch(()=>showToast('❌ Email failed.'));
+    }else showToast('❌ EmailJS not loaded');
+  }); // end firebase
+}
+
+// ── ADMIN TAB SWITCH ──
+function switchAdminTab(tab){
+  document.getElementById('admin-main-tab').classList.toggle('active', tab==='main');
+  document.getElementById('admin-storage-tab').classList.toggle('active', tab==='storage');
+  document.getElementById('admin-main-section').style.display = tab==='main' ? 'block' : 'none';
+  document.getElementById('admin-storage-section').style.display = tab==='storage' ? 'block' : 'none';
+  if(tab==='storage') loadStorageInfo();
+}
+
+// ── STORAGE MANAGEMENT ──
+var storageBranch = 1;
+
+function switchStorageBranch(b){
+  storageBranch = b;
+  document.getElementById('stab-1').classList.toggle('active', b===1);
+  document.getElementById('stab-2').classList.toggle('active', b===2);
+  loadMonthlyList();
+}
+
+function loadStorageInfo(){
+  // Estimate storage: count total bills across all months
+  if(!firebaseDB){ showToast('Not connected'); return; }
+  let totalBills = 0;
+  let checked = 0;
+  const now = new Date();
+  const months = 12;
+  const p = x=>String(x).padStart(2,'0');
+
+  for(let b=1;b<=2;b++){
+    for(let i=0;i<months;i++){
+      const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+      const daysInMonth = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+      for(let day=1;day<=daysInMonth;day++){
+        checked++;
+        const dateKey=p(day)+'-'+p(d.getMonth()+1)+'-'+d.getFullYear();
+        firebaseDB.ref(getFirebaseBillsPath(b, dateKey)).once('value', snap=>{
+          const data=snap.val();
+          if(data) totalBills += Object.keys(data).length;
+          checked--;
+          if(checked === 0){
+            // Each slim bill ≈ 0.5KB, each full bill ≈ 2KB
+            const estKB = totalBills * 0.8; // mixed old/new format
+            const estMB = (estKB/1024).toFixed(2);
+            const pct = Math.min(100, (estKB/(1024*1024)*100)).toFixed(3);
+            const bar = document.getElementById('storage-bar');
+            const eu = document.getElementById('est-usage');
+            const sp = document.getElementById('storage-pct');
+            if(eu) eu.textContent = estMB+' MB ('+totalBills+' bills)';
+            if(sp) sp.textContent = pct+'%';
+            if(bar){
+              bar.style.width = Math.max(1, parseFloat(pct))+'%';
+              bar.className = 'storage-bar' + (parseFloat(pct)>80?' danger':parseFloat(pct)>50?' warn':'');
+            }
+          }
+        });
+      }
+    }
+  }
+  loadMonthlyList();
+}
+
+function loadMonthlyList(){
+  if(!firebaseDB) return;
+  const now=new Date(); const p=x=>String(x).padStart(2,'0');
+  const list=document.getElementById('monthly-list');
+  if(list) list.innerHTML='<div class="admin-empty">Loading...</div>';
+  const months=[];
+  for(let i=0;i<12;i++){
+    const d=new Date(now.getFullYear(), now.getMonth()-i, 1);
+    months.push({
+      label:d.toLocaleString('en',{month:'long',year:'numeric'}),
+      year:d.getFullYear(), month:d.getMonth()+1,
+      daysInMonth:new Date(d.getFullYear(),d.getMonth()+1,0).getDate()
+    });
+  }
+  let results=[]; let pending=months.length;
+  months.forEach(mn=>{
+    let monthBills=[]; let daysPending=mn.daysInMonth;
+    for(let day=1;day<=mn.daysInMonth;day++){
+      const dateKey=p(day)+'-'+p(mn.month)+'-'+mn.year;
+      firebaseDB.ref(getFirebaseBillsPath(storageBranch,dateKey)).once('value',snap=>{
+        const data=snap.val();
+        if(data) monthBills=monthBills.concat(Object.values(data).map(expandBill));
+        daysPending--;
+        if(daysPending===0){
+          const net=b=>b.commission>0?(b.netAmount||0):(b.grandTotal||0);
+          const tot=monthBills.reduce((s,b)=>s+net(b),0);
+          results.push({label:mn.label,year:mn.year,month:mn.month,count:monthBills.length,total:tot});
+          pending--;
+          if(pending===0){
+            results=results.filter(r=>r.count>0);
+            if(!results.length){if(list)list.innerHTML='<div class="admin-empty">No data found</div>';return;}
+            if(list) list.innerHTML=results.map(r=>`
+              <div class="month-row">
+                <div>
+                  <div class="month-name">${r.label}</div>
+                  <div class="month-count">${r.count} bills</div>
+                </div>
+                <div class="month-amt">${fmtINR(r.total)}</div>
+                <div class="month-actions">
+                  <button class="btn-month-export" onclick="exportMonth(${r.year},${r.month},'${r.label}')">⬇ Excel</button>
+                  <button class="btn-month-delete" onclick="deleteMonth(${r.year},${r.month},'${r.label}')">🗑</button>
+                </div>
+              </div>`).join('');
+          }
+        }
+      });
+    }
+  });
+}
+
+function exportMonth(year, month, label){
+  if(!firebaseDB){showToast('Not connected');return;}
+  const p=x=>String(x).padStart(2,'0');
+  const daysInMonth=new Date(year,month,0).getDate();
+  let allBills=[]; let pending=daysInMonth;
+  for(let day=1;day<=daysInMonth;day++){
+    const dateKey=p(day)+'-'+p(month)+'-'+year;
+    firebaseDB.ref(getFirebaseBillsPath(storageBranch,dateKey)).once('value',snap=>{
+      const data=snap.val();
+      if(data) allBills=allBills.concat(Object.values(data).map(expandBill));
+      pending--;
+      if(pending===0){
+        if(!allBills.length){showToast('No bills in '+label);return;}
+        const wb=XLSX.utils.book_new();
+        // Summary sheet
+        const net=b=>b.commission>0?(b.netAmount||0):(b.grandTotal||0);
+        const tot=allBills.reduce((s,b)=>s+net(b),0);
+        const summaryRows=[
+          ['GIRIVALAM HOME STAY — MONTHLY EXPORT'],
+          ['Branch:', BRANCHES[storageBranch].name],
+          ['Month:', label],
+          ['Total Bills:', allBills.length],
+          ['Net Collection:', tot],[],
+          ['Receipt No','Name','Date','Time','Stay Type','Members/Room','Total','Net','Payment']
+        ];
+        allBills.forEach(b=>{
+          const detail=b.stayType==='hall'?b.members+'pax':b.roomNum||'-';
+          summaryRows.push([b.receiptNo,b.name,b.date,b.time,b.stayType,detail,b.grandTotal,net(b),b.payMode]);
+        });
+        const ws=XLSX.utils.aoa_to_sheet(summaryRows);
+        ws['!cols']=[{wch:18},{wch:20},{wch:12},{wch:10},{wch:8},{wch:10},{wch:10},{wch:10},{wch:8}];
+        XLSX.utils.book_append_sheet(wb,ws,'Summary');
+        XLSX.writeFile(wb,'GHS_'+BRANCHES[storageBranch].name.replace(/ /g,'_')+'_'+label.replace(/ /g,'_')+'.xlsx');
+        showToast('✅ Excel downloaded!');
+      }
+    });
+  }
+}
+
+function deleteMonth(year, month, label){
+  if(!confirm('Delete ALL bills for '+label+' from Firebase? Make sure you downloaded Excel first!')) return;
+  if(!firebaseDB){showToast('Not connected');return;}
+  const p=x=>String(x).padStart(2,'0');
+  const daysInMonth=new Date(year,month,0).getDate();
+  let deleted=0;
+  for(let day=1;day<=daysInMonth;day++){
+    const dateKey=p(day)+'-'+p(month)+'-'+year;
+    firebaseDB.ref(getFirebaseBillsPath(storageBranch,dateKey)).remove();
+    deleted++;
+  }
+  showToast('🗑 Deleted '+label+' data!');
+  setTimeout(()=>{ loadStorageInfo(); }, 1000);
+}
+
+function autoDeleteOldData(){
+  const days=parseInt(document.getElementById('auto-delete-period').value);
+  if(!confirm('Delete bills older than '+days+' days from BOTH branches? This cannot be undone! Download Excel first.')) return;
+  if(!firebaseDB){showToast('Not connected');return;}
+  const cutoff=new Date(Date.now()-days*86400000);
+  const p=x=>String(x).padStart(2,'0');
+  let deletedCount=0;
+  // Check last 2 years of dates
+  for(let b=1;b<=2;b++){
+    for(let i=days;i<=730;i++){
+      const d=new Date(Date.now()-i*86400000);
+      if(d<cutoff){
+        const dateKey=p(d.getDate())+'-'+p(d.getMonth()+1)+'-'+d.getFullYear();
+        firebaseDB.ref(getFirebaseBillsPath(b,dateKey)).once('value',snap=>{
+          if(snap.val()){
+            firebaseDB.ref(getFirebaseBillsPath(b,dateKey)).remove();
+            deletedCount++;
+          }
+        });
+      }
+    }
+  }
+  showToast('🗑 Deleted bills older than '+days+' days!');
+  setTimeout(()=>{ loadStorageInfo(); }, 2000);
+}
+
+// ── TOAST ──
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ── ACCESSORIES ──
+const ACCESSORIES = [
+  { id:'santoor',   name:'Santoor Soap',   price:10,   defaultPrice:10,  emoji:'🧼',  bg:'linear-gradient(135deg,#fff3e0,#ffe0b2)', label:'Orange Soap' },
+  { id:'medimix',   name:'Medimix Soap',   price:10,   defaultPrice:10,  emoji:'🟩',  bg:'linear-gradient(135deg,#e8f5e9,#c8e6c9)', label:'Green Soap' },
+  { id:'shampoo',   name:'Shampoo',        price:2,    defaultPrice:2,   emoji:'🧴',  bg:'linear-gradient(135deg,#e3f2fd,#bbdefb)', label:'Shampoo' },
+  { id:'paste',     name:'Paste',          price:10,   defaultPrice:10,  emoji:'🔴',  bg:'linear-gradient(135deg,#ffebee,#ffcdd2)', label:'Toothpaste' },
+  { id:'brush',     name:'Brush',          price:0,    defaultPrice:0,   emoji:'🪥',  bg:'linear-gradient(135deg,#f3e5f5,#e1bee7)', label:'Toothbrush' },
+  { id:'water1l',   name:'1L Water Bottle',price:20,   defaultPrice:20,  emoji:'💧',  bg:'linear-gradient(135deg,#e1f5fe,#b3e5fc)', label:'Small Bottle' },
+  { id:'water2l',   name:'2L Water Bottle',price:0,    defaultPrice:0,   emoji:'🫧',  bg:'linear-gradient(135deg,#e0f7fa,#b2ebf2)', label:'Big Bottle' },
+  { id:'oil',       name:'Oil',            price:0,    defaultPrice:0,   emoji:'🫙',  bg:'linear-gradient(135deg,#e3f2fd,#bbdefb)', label:'Oil Bottle' },
+  { id:'powder',    name:'Powder',         price:0,    defaultPrice:0,   emoji:'🌸',  bg:'linear-gradient(135deg,#fce4ec,#f8bbd0)', label:'Powder' },
+  { id:'comb',      name:'Comb',           price:0,    defaultPrice:0,   emoji:'🪮',  bg:'linear-gradient(135deg,#fff8e1,#ffecb3)', label:'Comb' },
+  { id:'veshti',    name:'Veshti',         price:0,    defaultPrice:0,   emoji:'🧺',  bg:'linear-gradient(135deg,#e8eaf6,#c5cae9)', label:'Veshti', svgIcon:`<svg viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg' width='60' height='60'><rect x='15' y='20' width='50' height='40' rx='4' fill='white' stroke='#9fa8da' stroke-width='2.5'/><rect x='15' y='20' width='50' height='10' rx='2' fill='#9fa8da'/><line x1='25' y1='35' x2='55' y2='35' stroke='#c5cae9' stroke-width='2'/><line x1='25' y1='42' x2='55' y2='42' stroke='#c5cae9' stroke-width='2'/><line x1='25' y1='49' x2='55' y2='49' stroke='#c5cae9' stroke-width='2'/><rect x='35' y='16' width='10' height='8' rx='2' fill='#7986cb'/></svg>` },
+];
+
+
+
+function initAccessories(){
+  ACCESSORIES.forEach(a => { accCounts[a.id] = 0; accPrices[a.id] = a.defaultPrice; });
+  renderAccGrid();
+  renderAccLog();
+}
+
+function renderAccGrid(){
+  const grid = document.getElementById('acc-grid');
+  if(!grid) return;
+  grid.innerHTML = ACCESSORIES.map(a => {
+    const hasDefault = a.defaultPrice > 0;
+    const priceRow = hasDefault
+      ? `<div class="acc-price">₹ ${a.defaultPrice} per piece</div>`
+      : `<div class="acc-price-input"><input type="number" id="acc-price-${a.id}" placeholder="₹ price" inputmode="decimal" min="0" value="${accPrices[a.id]||''}" oninput="accPriceChange('${a.id}',this.value)" style="border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:12px;width:100%;font-family:'DM Sans',sans-serif;background:#fafaf8;color:var(--text);outline:none;margin-bottom:4px;"></div>`;
+    return `
+    <div class="acc-item">
+      <div class="acc-img" style="background:${a.bg};">${a.svgIcon||a.emoji}</div>
+      <div class="acc-details">
+        <div class="acc-name">${a.name}</div>
+        ${priceRow}
+        <div class="acc-counter">
+          <button class="acc-btn" onclick="accChange('${a.id}',-1)">−</button>
+          <div class="acc-count" id="acc-count-${a.id}">${accCounts[a.id]||0}</div>
+          <button class="acc-btn plus" onclick="accChange('${a.id}',1)">+</button>
+        </div>
+        <div class="acc-subtotal"><strong id="acc-sub-${a.id}">${fmtINR((accCounts[a.id]||0)*(accPrices[a.id]||0))}</strong>subtotal</div>
+      </div>
+    </div>`;
+  }).join('');
+  updateAccTotal();
+}
+
+function accChange(id, delta){
+  accCounts[id] = Math.max(0, (accCounts[id]||0) + delta);
+  document.getElementById('acc-count-'+id).textContent = accCounts[id];
+  const price = accPrices[id]||0;
+  document.getElementById('acc-sub-'+id).textContent = fmtINR(accCounts[id]*price);
+  updateAccTotal();
+}
+
+function accPriceChange(id, val){
+  accPrices[id] = parseFloat(val)||0;
+  const price = accPrices[id];
+  document.getElementById('acc-sub-'+id).textContent = fmtINR((accCounts[id]||0)*price);
+  updateAccTotal();
+}
+
+function updateAccTotal(){
+  const total = ACCESSORIES.reduce((s,a)=>s+(accCounts[a.id]||0)*(accPrices[a.id]||0), 0);
+  document.getElementById('acc-grand-total').textContent = fmtINR(total);
+}
+
+function saveAccessories(){
+  const total = ACCESSORIES.reduce((s,a)=>s+(accCounts[a.id]||0)*a.price, 0);
+  if(total===0){showToast('Add at least one item first');return;}
+  const now = new Date();
+  const p = x=>String(x).padStart(2,'0');
+  const h = now.getHours(), m = now.getMinutes();
+  const ampm = h>=12?'PM':'AM'; const h12=(h%12)||12;
+  const entry = {
+    time: `${p(h12)}:${p(m)} ${ampm}`,
+    date: `${p(now.getDate())}/${p(now.getMonth()+1)}/${now.getFullYear()}`,
+    items: ACCESSORIES.filter(a=>accCounts[a.id]>0).map(a=>({name:a.name,qty:accCounts[a.id],price:accPrices[a.id]||0,subtotal:accCounts[a.id]*(accPrices[a.id]||0)})),
+    total
+  };
+  const key = 'ghs_acc_'+getTodayKey().replace(/:/g,'-');
+  const logs = JSON.parse(localStorage.getItem(key)||'[]');
+  logs.push(entry);
+  localStorage.setItem(key, JSON.stringify(logs));
+
+  // Save to Firebase
+  saveAccToFirebase(entry);
+
+  // Save to Excel
+  const wb = XLSX.utils.book_new();
+  const rows = [
+    ['GIRIVALAM HOME STAY — ACCESSORIES'],['Date: '+entry.date],['Time: '+entry.time],[],
+    ['Item','Qty','Rate (₹)','Subtotal (₹)'],
+    ...entry.items.map(i=>[i.name,i.qty,i.price,i.subtotal]),
+    [],['TOTAL (₹)', '', '', entry.total]
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:20},{wch:8},{wch:10},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Accessories');
+  XLSX.writeFile(wb, `GHS_Accessories_${getTodayKey().replace(/:/g,'-')}.xlsx`);
+
+  showToast('✅ Saved & Excel downloaded!');
+  clearAccessories();
+  renderAccLog();
+}
+
+function clearAccessories(){
+  ACCESSORIES.forEach(a=>{ accCounts[a.id]=0; accPrices[a.id]=a.defaultPrice; });
+  renderAccGrid();
+}
+
+function renderAccLog(){
+  const el=document.getElementById('acc-log-list');
+  if(!el) return;
+  if(!firebaseDB){el.innerHTML='<div class="no-acc-log">⚠️ Not connected</div>';return;}
+  const dateKey=getTodayKey().replace(/:/g,'-');
+  firebaseDB.ref(getFirebaseAccPath(currentBranch,dateKey)).once('value',snap=>{
+    const data=snap.val(); const logs=data?Object.values(data):[];
+    if(!logs.length){el.innerHTML='<div class="no-acc-log">No accessory sales today</div>';return;}
+    el.innerHTML=logs.slice().reverse().map(l=>`
+      <div class="acc-log-row">
+        <div>
+          <div class="acc-log-name">${l.items?l.items.map(i=>i.name+' ×'+i.qty).join(', '):'-'}</div>
+          <div class="acc-log-meta">${l.time}</div>
+        </div>
+        <div class="acc-log-amt">${fmtINR(l.total)}</div>
+      </div>`).join('');
+  });
+}
+
+// Init accessories on load
+initAccessories();
+
+// ── LOGIN SYSTEM ──
+const ACCOUNTS = {
+  "Girivalam Home Stay": { password: "Girivalam@2025", branch: 1, role: "branch" },
+  "Anandha Wedding Hall": { password: "Anandha@2025", branch: 2, role: "branch" },
+  "Jeevanandham S": { password: "Jeeva@2k2", branch: 0, role: "admin" }
+};
+
+function goToPassword(username, icon){
+  document.getElementById('login-user').value = username;
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-selected-name').textContent = username;
+  document.getElementById('login-selected-icon').textContent = icon;
+  document.getElementById('login-step1').style.display = 'none';
+  document.getElementById('login-step2').style.display = 'block';
+  document.getElementById('login-error').classList.remove('show');
+  // Update login box color based on selection
+  const acc = ACCOUNTS[username];
+  const box = document.querySelector('.login-box');
+  const badge = document.getElementById('login-selected-badge');
+  if(acc && acc.role==='admin'){
+    if(box) box.style.borderTop='4px solid #C8973A';
+    if(badge){ badge.style.background='#fffbeb'; badge.style.borderColor='#C8973A'; }
+    document.getElementById('login-selected-name').style.color='#7c2d12';
+  } else if(acc && acc.branch===2){
+    if(box) box.style.borderTop='4px solid #2563eb';
+    if(badge){ badge.style.background='#eff6ff'; badge.style.borderColor='#2563eb'; }
+    document.getElementById('login-selected-name').style.color='#1a3a6b';
+  } else {
+    if(box) box.style.borderTop='4px solid #0A5C44';
+    if(badge){ badge.style.background='#f0faf6'; badge.style.borderColor='#1D9E75'; }
+    document.getElementById('login-selected-name').style.color='#0A5C44';
+  }
+  setTimeout(()=>document.getElementById('login-pass').focus(), 100);
+}
+
+function goBackToStep1(){
+  document.getElementById('login-step1').style.display = 'block';
+  document.getElementById('login-step2').style.display = 'none';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-error').classList.remove('show');
+}
+
+function doLogin(){
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value.trim();
+  const err  = document.getElementById('login-error');
+  const acc  = ACCOUNTS[user];
+  if(!acc || acc.password !== pass){
+    err.classList.add('show');
+    document.getElementById('login-pass').value='';
+    return;
+  }
+  err.classList.remove('show');
+  sessionStorage.setItem('ghs_user', user);
+  sessionStorage.setItem('ghs_branch', acc.branch);
+  sessionStorage.setItem('ghs_role', acc.role);
+  document.getElementById('login-overlay').style.display='none';
+  document.getElementById('main-app').style.display='flex';
+  document.body.className = acc.role==='admin' ? 'admin' : 'branch-'+acc.branch;
+  applyBranchAccess(acc.branch, acc.role);
+  // Init Firebase then navigate
+  initFirebase();
+  setTimeout(()=>{
+    if(acc.role==='admin') showPage('admin');
+    else showPage('billing');
+  }, 1000);
+}
+
+function doLogout(){
+  sessionStorage.removeItem('ghs_user');
+  sessionStorage.removeItem('ghs_branch');
+  document.getElementById('login-overlay').style.display='flex';
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
+}
+
+function applyBranchAccess(branch, role){
+  const isAdmin = role==='admin';
+
+  // Admin button & history - admin only
+  document.getElementById('dbtn-admin').style.display   = isAdmin ? 'flex' : 'none';
+  document.getElementById('dbtn-history').style.display = isAdmin ? 'flex' : 'none';
+  const adminDiv = document.getElementById('admin-divider');
+  if(adminDiv) adminDiv.style.display = isAdmin ? 'block' : 'none';
+
+  // Monitor page - admin only
+  const monBtn = document.getElementById('dbtn-monitor');
+  if(monBtn) monBtn.style.display = isAdmin ? 'flex' : 'none';
+
+  // Branch selector bar - admin only
+  const branchBar = document.querySelector('.branch-bar');
+  if(branchBar) branchBar.style.display = isAdmin ? 'flex' : 'none';
+
+  // Overview - admin only
+  const ovBtn = document.getElementById('dbtn-overview');
+  if(ovBtn) ovBtn.style.display = isAdmin ? 'flex' : 'none';
+  const sOvBtn2 = document.getElementById('sbtn-overview');
+  if(sOvBtn2) sOvBtn2.style.display = isAdmin ? 'flex' : 'none';
+
+  if(isAdmin){
+    switchBranch(1);
+    // Update drawer brand for admin
+    const brand = document.getElementById('drawer-brand');
+    if(brand) brand.innerHTML='GHS<br><span style="font-size:7px;opacity:0.7;">Admin</span>';
+    setTimeout(()=>showPage('admin'), 800);
+    return;
+  }
+
+  // Branch user: lock to their branch only
+  switchBranch(branch);
+
+  const bb1 = document.getElementById('bbtn-1');
+  const bb2 = document.getElementById('bbtn-2');
+  if(bb1){ bb1.style.display = branch===1 ? 'flex' : 'none'; }
+  if(bb2){ bb2.style.display = branch===2 ? 'flex' : 'none'; }
+
+  // Update drawer brand label
+  const brand = document.getElementById('drawer-brand');
+  if(brand){
+    if(branch===1) brand.innerHTML='GHS<br><span style="font-size:7px;opacity:0.7;">Branch 1</span>';
+    else brand.innerHTML='AWH<br><span style="font-size:7px;opacity:0.7;">Branch 2</span>';
+  }
+}
+
+function checkLogin(){
+  const user = sessionStorage.getItem('ghs_user');
+  const branch = parseInt(sessionStorage.getItem('ghs_branch')||'0');
+  if(user && ACCOUNTS[user]){
+    const role = sessionStorage.getItem('ghs_role') || ACCOUNTS[user].role || 'branch';
+    document.getElementById('login-overlay').style.display='none';
+    document.getElementById('main-app').style.display='flex';
+    document.body.className = role==='admin' ? 'admin' : 'branch-'+branch;
+    applyBranchAccess(branch, role);
+      setTimeout(initFirebase, 500);
+    // Navigate to correct page
+    setTimeout(()=>{
+      if(role==='admin') showPage('admin');
+    }, 1200);
+    return true;
+  }
+  return false;
+}
+
+// ── OVERVIEW & CHARTS ──
+
+
+
+// ── OVERVIEW DATE RANGE ──
+var overviewDays = 7;
+var overviewMode = 'daily'; // 'daily' or 'monthly'
+var overviewCustomFrom = null;
+var overviewCustomTo = null;
+var overviewIsCustom = false;
+
+function setQuickRange(days, mode){
+  overviewDays = days;
+  overviewMode = mode;
+  overviewIsCustom = false;
+  overviewCustomFrom = null;
+  overviewCustomTo = null;
+  // Update quick buttons
+  ['7d','30d','3m','6m','1y','custom'].forEach(k=>{
+    const b=document.getElementById('qbtn-'+k);
+    if(b) b.classList.remove('active');
+  });
+  const keyMap = {7:'7d',30:'30d',90:'3m',180:'6m',365:'1y'};
+  const btn = document.getElementById('qbtn-'+keyMap[days]);
+  if(btn) btn.classList.add('active');
+  document.getElementById('custom-range-row').style.display='none';
+  renderOverview();
+}
+
+function toggleCustomRange(){
+  const row = document.getElementById('custom-range-row');
+  const isHidden = row.style.display==='none';
+  row.style.display = isHidden ? 'flex' : 'none';
+  ['7d','30d','3m','6m','1y','custom'].forEach(k=>{
+    const b=document.getElementById('qbtn-'+k); if(b) b.classList.remove('active');
+  });
+  if(isHidden){
+    document.getElementById('qbtn-custom').classList.add('active');
+    // Set default custom range: last 30 days
+    const now=new Date(); const p=x=>String(x).padStart(2,'0');
+    const toDate = now.getFullYear()+'-'+p(now.getMonth()+1)+'-'+p(now.getDate());
+    const fromD = new Date(now.getTime()-29*86400000);
+    const fromDate = fromD.getFullYear()+'-'+p(fromD.getMonth()+1)+'-'+p(fromD.getDate());
+    document.getElementById('range-from').value = fromDate;
+    document.getElementById('range-to').value = toDate;
+  }
+}
+
+function applyCustomRange(){
+  const fromVal = document.getElementById('range-from').value;
+  const toVal = document.getElementById('range-to').value;
+  if(!fromVal||!toVal){showToast('Please select both dates');return;}
+  const from = new Date(fromVal); const to = new Date(toVal);
+  if(from>to){showToast('From date must be before To date');return;}
+  const diffDays = Math.ceil((to-from)/86400000)+1;
+  if(diffDays>366){showToast('Max range is 1 year (366 days)');return;}
+  overviewIsCustom = true;
+  overviewCustomFrom = from;
+  overviewCustomTo = to;
+  overviewDays = diffDays;
+  overviewMode = diffDays<=31?'daily':'monthly';
+  renderOverview();
+}
+
+function switchChart(mode){
+  overviewMode = mode;
+  renderOverview();
+}
+
+// ── OVERVIEW: READ FROM FIREBASE ──
+async function fetchFirebaseOverviewData(mode){
+  const results = {};
+  const now = new Date();
+  const p = x=>String(x).padStart(2,'0');
+  const branch = currentBranch;
+
+  if(mode==='daily'){
+    const promises = [];
+    const keys = [];
+    for(let i=6; i>=0; i--){
+      const d = new Date(now.getTime() - i*86400000);
+      const dateKey = `${p(d.getDate())}-${p(d.getMonth()+1)}-${d.getFullYear()}`;
+      const label = `${p(d.getDate())}/${p(d.getMonth()+1)}`;
+      keys.push({ dateKey, label });
+    }
+    // Fetch all days in parallel from Firebase
+    if(firebaseDB){
+      const snapshots = await Promise.all(
+        keys.map(k => firebaseDB.ref(`branch${branch}/bills/${k.dateKey}`).once('value'))
+      );
+      const accSnaps = await Promise.all(
+        keys.map(k => firebaseDB.ref(`branch${branch}/accessories/${k.dateKey}`).once('value'))
+      );
+      keys.forEach((k,i)=>{
+        const billsData = snapshots[i].val();
+        const bills = billsData ? Object.values(billsData) : [];
+        const accData = accSnaps[i].val();
+        const accLogs = accData ? Object.values(accData) : [];
+        const netBills = bills.reduce((s,b)=>s+(b.commission>0?(b.netAmount||0):(b.grandTotal||0)),0);
+        const netAcc = accLogs.reduce((s,l)=>s+(l.total||0),0);
+        results[k.label] = { bills: netBills, acc: netAcc, count: bills.length };
+      });
+    } else {
+      // Fallback to localStorage
+      keys.forEach(k=>{
+        const bills = JSON.parse(localStorage.getItem(`ghs_bills_${k.dateKey}`)||'[]');
+        const accLogs = JSON.parse(localStorage.getItem(`ghs_acc_${k.dateKey}`)||'[]');
+        results[k.label] = {
+          bills: bills.reduce((s,b)=>s+(b.commission>0?(b.netAmount||0):(b.grandTotal||0)),0),
+          acc: accLogs.reduce((s,l)=>s+(l.total||0),0),
+          count: bills.length
+        };
+      });
+    }
+  } else {
+    // Monthly — last 12 months
+    for(let i=11; i>=0; i--){
+      const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+      const label = `${p(d.getMonth()+1)}/${d.getFullYear().toString().slice(2)}`;
+      let billsTotal=0, accTotal=0, count=0;
+      const daysInMonth = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+      if(firebaseDB){
+        const dayPromises = [];
+        const dayAccPromises = [];
+        for(let day=1; day<=daysInMonth; day++){
+          const dateKey = `${p(day)}-${p(d.getMonth()+1)}-${d.getFullYear()}`;
+          dayPromises.push(firebaseDB.ref(`branch${branch}/bills/${dateKey}`).once('value'));
+          dayAccPromises.push(firebaseDB.ref(`branch${branch}/accessories/${dateKey}`).once('value'));
+        }
+        const daySnaps = await Promise.all(dayPromises);
+        const dayAccSnaps = await Promise.all(dayAccPromises);
+        daySnaps.forEach((snap,idx)=>{
+          const data = snap.val();
+          const bills = data ? Object.values(data) : [];
+          billsTotal += bills.reduce((s,b)=>s+(b.commission>0?(b.netAmount||0):(b.grandTotal||0)),0);
+          count += bills.length;
+        });
+        dayAccSnaps.forEach(snap=>{
+          const data = snap.val();
+          const logs = data ? Object.values(data) : [];
+          accTotal += logs.reduce((s,l)=>s+(l.total||0),0);
+        });
+      } else {
+        for(let day=1; day<=daysInMonth; day++){
+          const dateKey = `${p(day)}-${p(d.getMonth()+1)}-${d.getFullYear()}`;
+          const bills = JSON.parse(localStorage.getItem(`ghs_bills_${dateKey}`)||'[]');
+          const accLogs = JSON.parse(localStorage.getItem(`ghs_acc_${dateKey}`)||'[]');
+          billsTotal += bills.reduce((s,b)=>s+(b.commission>0?(b.netAmount||0):(b.grandTotal||0)),0);
+          accTotal += accLogs.reduce((s,l)=>s+(l.total||0),0);
+          count += bills.length;
+        }
+      }
+      results[label] = { bills: billsTotal, acc: accTotal, count };
+    }
+  }
+  return results;
+}
+
+// Also save accessories to Firebase
+function saveAccToFirebase(entry){
+  if(!firebaseDB) return;
+  try {
+    const now = new Date(); const p = x=>String(x).padStart(2,'0');
+    const dateKey = `${p(now.getDate())}-${p(now.getMonth()+1)}-${now.getFullYear()}`;
+    firebaseDB.ref(`branch${currentBranch}/accessories/${dateKey}`).push(entry);
+  } catch(e){ console.error('Firebase acc error:', e); }
+}
+
+async function renderOverview(){
+  const isDaily=chartMode==='daily'; const days=isDaily?7:30;
+  const ct=document.getElementById('chart-title');
+  if(ct) ct.textContent=isDaily?'Last 7 Days Sales':'Last 30 Days Sales';
+  const os=document.getElementById('overview-stats');
+  if(os) os.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;grid-column:1/-1;">Loading from cloud...</div>';
+  fetchOverviewData(days,function(data){
+    const ovLabels=Object.keys(data);
+    const billsVals=ovLabels.map(function(l){return data[l].bills;});
+    const accVals=ovLabels.map(function(l){return data[l].acc;});
+    const totalBills=billsVals.reduce(function(a,b){return a+b;},0);
+    const totalAcc=accVals.reduce(function(a,b){return a+b;},0);
+    const totalCount=ovLabels.reduce(function(s,l){return s+data[l].count;},0);
+    if(os) os.innerHTML='<div class="ov-card"><div class="ov-label">Total Bills Net</div><div class="ov-val">'+fmtINR(totalBills)+'</div><div class="ov-sub">'+totalCount+' bills</div></div><div class="ov-card"><div class="ov-label">Accessories</div><div class="ov-val">'+fmtINR(totalAcc)+'</div><div class="ov-sub">'+(isDaily?'7 days':'30 days')+'</div></div><div class="ov-card"><div class="ov-label">Combined Total</div><div class="ov-val">'+fmtINR(totalBills+totalAcc)+'</div><div class="ov-sub">All income</div></div><div class="ov-card"><div class="ov-label">Avg per Day</div><div class="ov-val">'+fmtINR(Math.round((totalBills+totalAcc)/days))+'</div><div class="ov-sub">Bills + items</div></div>';
+    var canvas=document.getElementById('sales-chart');
+    if(!canvas) return;
+    var ctx=canvas.getContext('2d');
+    if(salesChart) salesChart.destroy();
+    salesChart=new Chart(ctx,{type:'bar',data:{labels:ovLabels,datasets:[{label:'Bills (Net)',data:billsVals,backgroundColor:'rgba(29,158,117,0.85)',borderRadius:4,borderSkipped:false},{label:'Accessories',data:accVals,backgroundColor:'rgba(245,158,11,0.85)',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10},color:'#9ca3af'}},y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:10},color:'#9ca3af',callback:function(v){return v>=1000?(v/1000).toFixed(1)+'k':v;}}}}}});
+  });
+}
+
+// ── FIREBASE CONFIG ──
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBEXnH1uO7Rf3smP9b61h5swI0BmsbUa5o",
+  authDomain: "ghs-billing-b47fc.firebaseapp.com",
+  databaseURL: "https://ghs-billing-b47fc-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ghs-billing-b47fc",
+  storageBucket: "ghs-billing-b47fc.firebasestorage.app",
+  messagingSenderId: "718705380541",
+  appId: "1:718705380541:web:888fb4aa0738334df33bd4"
+};
+
+// ── TELEGRAM CONFIG ──
+const TELEGRAM = {
+  botToken: "8320444939:AAH9fOtedvoYSGdJpnEhDaeApGXTZ7eS03M",
+  chatId: "930300179"
+};
+
+// ── BRANCH CONFIG ──
+const BRANCHES = {
+  1: { name: "Girivalam Home Stay", sub: "No. 70, Sannathi Street, Tiruvannamalai" },
+  2: { name: "Anandha Wedding Hall", sub: "2nd Branch" }
+};
+
+
+
+// ── INIT FIREBASE ──
+function initFirebase(){
+  try {
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebaseDB = firebase.database();
+    document.getElementById('sync-dot').classList.add('online');
+    document.getElementById('sync-status').textContent = 'Connected';
+    listenBranch2Bills();
+  } catch(e) {
+    document.getElementById('sync-status').textContent = 'Offline';
+    console.error('Firebase error:', e);
+  }
+}
+
+// ── SWITCH BRANCH ──
+function switchBranch(num){
+  currentBranch = num;
+  [1,2].forEach(n => document.getElementById('bbtn-'+n).classList.toggle('active', n===num));
+  const b = BRANCHES[num];
+  document.getElementById('branch-title').textContent = b.name;
+  document.getElementById('branch-sub').textContent = b.sub;
+  updateReceiptDisplays();
+  updateBadges();
+}
+
+// ── FIREBASE KEY FOR BRANCH ──
+function getFirebaseKey(branch){
+  const n = new Date(); const p = x=>String(x).padStart(2,'0');
+  return `branch${branch}/bills/${p(n.getDate())}-${p(n.getMonth()+1)}-${n.getFullYear()}`;
+}
+
+// ── SAVE BILL TO FIREBASE ──
+function saveBillToFirebase(billData){
+  if(!firebaseDB) return;
+  try {
+    const key = getFirebaseKey(currentBranch);
+    firebaseDB.ref(key).push(billData);
+  } catch(e){ console.error('Firebase save error:', e); }
+}
+
+// ── LISTEN BRANCH 2 BILLS IN REAL TIME ──
+function listenBranch2Bills(){
+  if(!firebaseDB) return;
+  const n = new Date(); const p = x=>String(x).padStart(2,'0');
+  const key = `branch2/bills/${p(n.getDate())}-${p(n.getMonth()+1)}-${n.getFullYear()}`;
+  firebaseDB.ref(key).on('value', snap => {
+    const data = snap.val();
+    const bills = data ? Object.values(data) : [];
+    renderMonitorBills(bills);
+    const mb = document.getElementById('monitor-badge');
+    if(bills.length > 0){ mb.textContent = bills.length; mb.classList.remove('hidden'); }
+    else mb.classList.add('hidden');
+    const now = new Date();
+    const p2 = x=>String(x).padStart(2,'0');
+    const h = now.getHours(), m = now.getMinutes();
+    const ampm = h>=12?'PM':'AM'; const h12=(h%12)||12;
+    const el = document.getElementById('monitor-last-update');
+    if(el) el.textContent = `Updated ${p2(h12)}:${p2(m)} ${ampm}`;
+  });
+}
+
+// ── RENDER MONITOR BILLS ──
+function renderMonitorBills(bills){
+  const summary = document.getElementById('monitor-summary');
+  const list = document.getElementById('monitor-bills-list');
+  if(!summary || !list) return;
+
+  const net = b => b.commission>0?(b.netAmount||0):(b.grandTotal||0);
+  const tot = bills.reduce((s,b)=>s+net(b),0);
+  const cashAmt = bills.filter(b=>b.payMode==='CASH').reduce((s,b)=>s+net(b),0);
+  const gpayAmt = bills.filter(b=>b.payMode==='GPAY').reduce((s,b)=>s+net(b),0);
+
+  summary.innerHTML = `
+    <div class="sum-card"><div class="sc-label">Total Bills</div><div class="sc-val">${bills.length}</div><div class="sc-sub">Anandha Wedding Hall today</div></div>
+    <div class="sum-card"><div class="sc-label">Net Collection</div><div class="sc-val">${fmtINR(tot)}</div><div class="sc-sub">All modes</div></div>
+    <div class="sum-card"><div class="sc-label">Cash</div><div class="sc-val">${fmtINR(cashAmt)}</div><div class="sc-sub">${bills.filter(b=>b.payMode==='CASH').length} bills</div></div>
+    <div class="sum-card"><div class="sc-label">GPay</div><div class="sc-val">${fmtINR(gpayAmt)}</div><div class="sc-sub">${bills.filter(b=>b.payMode==='GPAY').length} bills</div></div>`;
+
+  if(!bills.length){ list.innerHTML='<div class="monitor-empty">📭 No bills from Anandha Wedding Hall today</div>'; return; }
+
+  list.innerHTML = bills.slice().reverse().map(b => {
+    const pc = b.payMode==='CASH'?'pay-cash':b.payMode==='GPAY'?'pay-gpay':'pay-other';
+    const stag = b.stayType==='room'?'<span class="tag tag-room">Room</span>':'<span class="tag tag-hall">Hall</span>';
+    const dispAmt = b.commission>0
+      ? `${fmtINR(b.netAmount)}<span style="font-size:9px;color:var(--muted);display:block;">gross ${fmtINR(b.grandTotal)}</span>`
+      : fmtINR(b.grandTotal);
+    return `<div class="monitor-bill-row">
+      <div class="bill-row-top"><div class="bill-row-name">${b.name}</div><div class="bill-row-amt">${dispAmt}</div></div>
+      <div class="bill-row-bot">
+        <div class="bill-row-no">${b.receiptNo} • ${b.time}</div>
+        <div style="display:flex;gap:4px;">${stag}<span class="tag ${pc}">${b.payMode}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── TELEGRAM ALERT ──
+async function sendTelegramAlert(bill){
+  try {
+    const branch = BRANCHES[currentBranch].name;
+    const type = bill.stayType==='room'?`Room ${bill.roomNum}`:`Hall ${bill.members} members`;
+    const msg = `🏨 *${branch}*
+🧾 Receipt: ${bill.receiptNo}
+👤 ${bill.name}
+📱 ${bill.mobile}
+🏠 ${type}
+💰 ${bill.payMode}: ₹${bill.grandTotal}${bill.commission>0?' (Net: ₹'+bill.netAmount+')':''}
+⏰ ${bill.time} ${bill.date}`;
+    const url = `https://api.telegram.org/bot${TELEGRAM.botToken}/sendMessage?chat_id=${TELEGRAM.chatId}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
+    await fetch(url);
+  } catch(e){ console.error('Telegram error:', e); }
+}
+
+// ── OVERRIDE saveBill TO ALSO SYNC FIREBASE + TELEGRAM ──
+const _origSaveBill = saveBill;
+saveBill = function(){
+  const d = getBillData();
+  if(d.name==='-'||!d.name){ showToast('Please enter guest name'); return; }
+  if(!firebaseDB){ showToast('⚠️ No internet! Check connection.'); return; }
+  d.receiptNo = incrementReceipt();
+  d.branch = currentBranch;
+  d.branchName = BRANCHES[currentBranch].name;
+  d.savedAt = Date.now();
+
+  // Save ONLY to Firebase cloud
+  const dateKey = getTodayKey().replace(/:/g,'-');
+  firebaseDB.ref(getFirebaseBillsPath(currentBranch, dateKey)).push(d)
+    .then(()=>{
+      sendTelegramAlert(d);
+      updateBadges();
+      showToast('✅ Saved to cloud! '+d.receiptNo);
+      setTimeout(()=>{ clearForm(); }, 400);
+    })
+    .catch(e=>{ showToast('❌ Save failed: '+e.message); });
+};
+
+// showPage handled by final override
+
+// ── ADMIN FUNCTIONS ──
+
+
+
+function switchAdminBranch(b){
+  adminBranch = b;
+  document.getElementById('atab-1').classList.toggle('active', b===1);
+  document.getElementById('atab-2').classList.toggle('active', b===2);
+  loadAdminBills();
+}
+
+function loadAdminBills(){
+  const datePicker = document.getElementById('admin-date-picker');
+  if(!datePicker.value){ showToast('Please select a date'); return; }
+  const [y,m,d] = datePicker.value.split('-');
+  const dateKey = `${d}-${m}-${y}`;
+  const container = document.getElementById('admin-bills-container');
+  container.innerHTML = '<div class="admin-empty">⏳ Loading...</div>';
+  if(!firebaseDB){ container.innerHTML='<div class="admin-empty">⚠️ Not connected</div>'; return; }
+
+  firebaseDB.ref(getFirebaseBillsPath(adminBranch, dateKey)).once('value', snap=>{
+    const data = snap.val();
+    adminBillsCache = data || {};
+    const bills = data ? Object.entries(data) : [];
+
+    // Summary
+    const billArr = bills.map(([,v])=>v);
+    const net = b=>b.commission>0?(b.netAmount||0):(b.grandTotal||0);
+    const tot = billArr.reduce((s,b)=>s+net(b),0);
+    const cash = billArr.filter(b=>b.payMode==='CASH').reduce((s,b)=>s+net(b),0);
+    const gpay = billArr.filter(b=>b.payMode==='GPAY').reduce((s,b)=>s+net(b),0);
+    document.getElementById('admin-summary').innerHTML = `
+      <div class="sum-card"><div class="sc-label">Total Bills</div><div class="sc-val">${bills.length}</div><div class="sc-sub">${dateKey}</div></div>
+      <div class="sum-card"><div class="sc-label">Net Total</div><div class="sc-val">${fmtINR(tot)}</div><div class="sc-sub">All modes</div></div>
+      <div class="sum-card"><div class="sc-label">Cash/GPay</div><div class="sc-val" style="font-size:13px;">${fmtINR(cash)}<br><span style="font-size:11px;color:var(--muted);">${fmtINR(gpay)}</span></div><div class="sc-sub">Cash / GPay</div></div>`;
+
+    if(!bills.length){
+      container.innerHTML='<div class="admin-empty">📭 No bills on this date</div>';
+      return;
+    }
+    container.innerHTML = bills.map(([fbKey, b])=>renderAdminBillCard(fbKey, b, dateKey)).join('');
+  });
+}
+
+function renderAdminBillCard(fbKey, b, dateKey){
+  const isHall = b.stayType==='hall';
+  return `<div class="admin-bill-card" id="acard-${fbKey}">
+    <div class="admin-bill-head">
+      <div>
+        <div class="admin-bill-name">${b.name||'-'}</div>
+        <div class="admin-bill-receipt">${b.receiptNo||'-'} • ${b.date||''} ${b.time||''}</div>
+      </div>
+      <div style="font-size:14px;font-weight:700;color:var(--gd);">${fmtINR(b.commission>0?(b.netAmount||0):(b.grandTotal||0))}</div>
+    </div>
+    <div class="admin-bill-body">
+      <div class="admin-field-row"><label>Guest Name</label><input id="af-name-${fbKey}" value="${b.name||''}"></div>
+      <div class="admin-field-row"><label>Mobile</label><input id="af-mobile-${fbKey}" value="${b.mobile||''}"></div>
+      <div class="admin-field-row"><label>Aadhaar</label><input id="af-aadhaar-${fbKey}" value="${b.aadhaar||''}"></div>
+      <div class="admin-field-row"><label>Date</label><input id="af-date-${fbKey}" value="${b.date||''}"></div>
+      <div class="admin-field-row"><label>Time</label><input id="af-time-${fbKey}" value="${b.time||''}"></div>
+      <div class="admin-field-row"><label>Stay Type</label>
+        <select id="af-type-${fbKey}">
+          <option value="hall" ${b.stayType==='hall'?'selected':''}>Hall</option>
+          <option value="room" ${b.stayType==='room'?'selected':''}>Room</option>
+        </select>
+      </div>
+      ${isHall ? `
+      <div class="admin-field-row"><label>Members</label><input id="af-members-${fbKey}" type="number" value="${b.members||0}"></div>
+      <div class="admin-field-row"><label>Rate/Person</label><input id="af-rate-${fbKey}" type="number" value="${b.rate||0}"></div>
+      <div class="admin-field-row"><label>Locker Count</label><input id="af-lcount-${fbKey}" type="number" value="${b.lockerCount||0}"></div>
+      <div class="admin-field-row"><label>Locker No.</label><input id="af-lnum-${fbKey}" value="${b.lockerNum||''}"></div>
+      <div class="admin-field-row"><label>Locker Rate</label><input id="af-lrate-${fbKey}" type="number" value="${b.lockerRate||0}"></div>
+      ` : `
+      <div class="admin-field-row"><label>Room No.</label><input id="af-room-${fbKey}" value="${b.roomNum||''}"></div>
+      <div class="admin-field-row"><label>Room Rate</label><input id="af-rrate-${fbKey}" type="number" value="${b.roomRate||0}"></div>
+      `}
+      <div class="admin-field-row"><label>Commission</label><input id="af-comm-${fbKey}" type="number" value="${b.commission||0}"></div>
+      <div class="admin-field-row"><label>Payment</label>
+        <select id="af-pay-${fbKey}">
+          <option value="CASH" ${b.payMode==='CASH'?'selected':''}>Cash</option>
+          <option value="GPAY" ${b.payMode==='GPAY'?'selected':''}>GPay</option>
+          <option value="OTHER" ${b.payMode==='OTHER'?'selected':''}>Other</option>
+        </select>
+      </div>
+      <div class="admin-bill-actions">
+        <button class="btn-admin-save" onclick="adminSaveBill('${fbKey}','${dateKey}')">💾 Save Changes</button>
+        <button class="btn-admin-del" onclick="adminDeleteBill('${fbKey}','${dateKey}')">🗑 Delete</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function adminSaveBill(fbKey, dateKey){
+  const isHall = document.getElementById(`af-type-${fbKey}`).value === 'hall';
+  const members = parseFloat(document.getElementById(`af-members-${fbKey}`)?.value)||0;
+  const rate = parseFloat(document.getElementById(`af-rate-${fbKey}`)?.value)||0;
+  const lc = parseFloat(document.getElementById(`af-lcount-${fbKey}`)?.value)||0;
+  const lr = parseFloat(document.getElementById(`af-lrate-${fbKey}`)?.value)||0;
+  const rr = parseFloat(document.getElementById(`af-rrate-${fbKey}`)?.value)||0;
+  const comm = parseFloat(document.getElementById(`af-comm-${fbKey}`).value)||0;
+  const grandTotal = isHall ? (members*rate)+(lc*lr) : rr;
+  const netAmount = Math.max(0, grandTotal - comm);
+
+  const updated = {
+    ...adminBillsCache[fbKey],
+    name: document.getElementById(`af-name-${fbKey}`).value,
+    mobile: document.getElementById(`af-mobile-${fbKey}`).value,
+    aadhaar: document.getElementById(`af-aadhaar-${fbKey}`).value,
+    date: document.getElementById(`af-date-${fbKey}`).value,
+    time: document.getElementById(`af-time-${fbKey}`).value,
+    stayType: document.getElementById(`af-type-${fbKey}`).value,
+    payMode: document.getElementById(`af-pay-${fbKey}`).value,
+    commission: comm, grandTotal, netAmount,
+    ...(isHall ? {members,rate,memberTotal:members*rate,lockerCount:lc,lockerNum:document.getElementById(`af-lnum-${fbKey}`).value,lockerRate:lr,lockerTotal:lc*lr}
+               : {roomNum:document.getElementById(`af-room-${fbKey}`).value,roomRate:rr})
+  };
+
+  firebaseDB.ref(`${getFirebaseBillsPath(adminBranch,dateKey)}/${fbKey}`).set(updated)
+    .then(()=>{ showToast('✅ Bill updated!'); adminBillsCache[fbKey]=updated; })
+    .catch(()=>showToast('❌ Update failed'));
+}
+
+function adminDeleteBill(fbKey, dateKey){
+  if(!confirm('Delete this bill permanently?')) return;
+  firebaseDB.ref(`${getFirebaseBillsPath(adminBranch,dateKey)}/${fbKey}`).remove()
+    .then(()=>{
+      showToast('🗑 Bill deleted!');
+      document.getElementById(`acard-${fbKey}`).remove();
+      delete adminBillsCache[fbKey];
+      loadAdminBills();
+    })
+    .catch(()=>showToast('❌ Delete failed'));
+}
+
+// Set today's date as default in admin date picker
+(function(){
+  const now=new Date();const p=x=>String(x).padStart(2,'0');
+  const el=document.getElementById('admin-date-picker');
+  if(el) el.value=`${now.getFullYear()}-${p(now.getMonth()+1)}-${p(now.getDate())}`;
+})();
+
+// Override showPage to include admin
+const _origShowPage2 = showPage;
+showPage = function(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.d-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  const dbtn = document.getElementById('dbtn-'+name);
+  if(dbtn) dbtn.classList.add('active');
+  if(name==='bills') renderBills();
+  if(name==='alerts') renderTimers();
+  if(name==='accessories'){ renderAccGrid(); renderAccLog(); }
+  if(name==='monitor') listenBranch2Bills();
+  if(name==='overview') renderOverview();
+  if(name==='admin') loadAdminBills();
+  window.scrollTo(0,0);
+};
+
+// ── START ──
+if(!checkLogin()){
+  // Show login screen - already visible by default
+}
+updateBadges();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</body>
+</html>
